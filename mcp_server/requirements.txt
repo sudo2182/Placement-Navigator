@@ -121,3 +121,19 @@ websocket-client==1.8.0
 websockets==15.0.1
 wrapt==1.17.3
 zipp==3.23.0
+
+# ===== DEVELOPMENT & TESTING DEPENDENCIES =====
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.0.0
+black>=23.0.0
+flake8>=6.0.0
+mypy>=1.0.0
+
+# ===== AI MODEL TESTING =====
+pytest-mock>=3.10.0
+responses>=0.23.0
+
+# ===== INSTALLATION NOTES =====
+# Install spaCy English model after installing requirements:
+# python -m spacy download en_core_web_sm
