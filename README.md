@@ -265,31 +265,6 @@ Placement-Navigator/
 - Check firewall settings
 - Ensure AI model endpoints are accessible
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 👥 Team
-
-- **Development Team**: SIH 2024 Team
-- **Project Lead**: [Your Name]
-- **Backend Developer**: [Backend Dev Name]
-- **Frontend Developer**: [Frontend Dev Name]
-- **AI/ML Engineer**: [AI Dev Name]
-
-## 🙏 Acknowledgments
-
-- Built for Smart India Hackathon 2024
-- Powered by FastAPI, Next.js, and AI technologies
-- Special thanks to the open-source community
-
-## 📞 Support
-
-For support and questions:
-- Create an issue on GitHub
-- Contact the development team
-- Check the documentation at `/docs`
-
 ---
 
-**Made with ❤️ for Smart India Hackathon 2024**
+**Made with ❤️ for Smart India Hackathon 2025**
