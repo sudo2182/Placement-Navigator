@@ -1,4 +1,4 @@
 node_modules/
 __pycache__/
-.env
+# .env  # Commented out to allow API keys to be pushed
 *.db
