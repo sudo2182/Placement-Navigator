@@ -104,8 +104,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Add performance monitoring middleware
-app.add_middleware(PerformanceMiddleware)
+# Add performance monitoring middleware (commented out due to compatibility issues)
+# app.add_middleware(PerformanceMiddleware)
 
 # Include routers
 app.include_router(auth.router)
