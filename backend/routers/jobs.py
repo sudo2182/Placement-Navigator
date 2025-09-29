@@ -1,12 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Dict, Any
+from datetime import datetime
 import sys
 sys.path.append('../')
 from shared.models import get_db, Job, User, Application, AIMatch
 from backend.auth import get_current_user, require_role
 from backend.schemas import JobCreate, JobResponse, ApplicationCreate, ApplicationResponse, AIMatchResponse
 from backend.services.mcp_client import mcp_client
+from backend.services.matching_service import matching_service
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
@@ -76,9 +78,18 @@ async def trigger_job_matching(
     job_id: int,
     current_user: User = Depends(require_role(["tpo", "employer"])),
     db: Session = Depends(get_db)
-):
-    """Manually trigger AI matching for a job"""
+) -> Dict[str, Any]:
+    """
+    Manually trigger AI matching for a job using the MatchingService
     
+    This endpoint uses the MatchingService to find matches for a job using
+    semantic matching with OpenAI embeddings and rule-based fallback.
+    
+    Returns:
+        A structured response with matches, method used, and metadata
+    """
+    
+    # Verify job exists and user has access
     job = db.query(Job).filter(Job.id == job_id).first()
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
@@ -87,17 +98,35 @@ async def trigger_job_matching(
         raise HTTPException(status_code=403, detail="Access denied")
     
     try:
-        # Call MCP service for AI matching
-        result = await mcp_client.find_job_matches(job_id, min_score=0.3, max_results=20)
+        # Use matching_service to find matches with fallback
+        result = await matching_service.find_matches(
+            job_id=job_id,
+            db=db,
+            min_score=0.3,
+            limit=20
+        )
         
+        # Check if there was an error
+        if "error" in result and result.get("method_used") == "error":
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Matching failed: {result.get('error', 'Unknown error')}"
+            )
+        
+        # Return structured response
         return {
-            "message": "AI matching completed",
             "job_id": job_id,
-            "matches_found": result.get("matches_found", 0),
-            "result": result
+            "matches_found": len(result.get("matches", [])),
+            "method_used": result.get("method_used", "unknown"),
+            "matches": result.get("matches", []),
+            "timestamp": datetime.utcnow().isoformat()
         }
         
+    except HTTPException:
+        # Re-raise HTTP exceptions
+        raise
     except Exception as e:
+        # Handle any other exceptions
         raise HTTPException(status_code=500, detail=f"Matching failed: {str(e)}")
 
 @router.post("/{job_id}/apply", response_model=ApplicationResponse)
