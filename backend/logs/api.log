@@ -21,3 +21,33 @@
 2025-09-29 12:51:02,449 - career_navigator - INFO - Database tables created/verified successfully
 2025-09-29 12:51:10,953 - career_navigator - INFO - Starting Career Navigator API
 2025-09-29 12:51:12,709 - career_navigator - INFO - Database tables created/verified successfully
+<<<<<<< HEAD
+<<<<<<< HEAD
+2025-09-30 00:18:09,280 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 00:18:11,484 - career_navigator - INFO - Database tables created/verified successfully
+2025-09-30 00:18:33,525 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 00:18:35,109 - career_navigator - INFO - Database tables created/verified successfully
+2025-09-30 00:18:45,702 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 00:18:47,164 - career_navigator - INFO - Database tables created/verified successfully
+2025-09-30 00:19:08,338 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 00:19:10,072 - career_navigator - INFO - Database tables created/verified successfully
+2025-09-30 00:19:14,628 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 00:19:16,067 - career_navigator - INFO - Database tables created/verified successfully
+2025-09-30 00:47:20,074 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 00:47:23,208 - career_navigator - INFO - Database tables created/verified successfully
+2025-09-30 01:22:06,248 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 01:38:22,510 - career_navigator - ERROR - Error creating database tables: (psycopg2.OperationalError) connection to server at "db.spdvoluvixldctmjmere.supabase.co" (2406:da1a:6b0:f61b:58cf:f2e5:921a:9fd3), port 5432 failed: server closed the connection unexpectedly
+	This probably means the server terminated abnormally
+	before or while processing the request.
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2025-09-30 08:08:06,938 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 08:08:22,374 - career_navigator - INFO - Database tables created/verified successfully
+=======
+2025-09-29 21:09:37,079 - career_navigator - INFO - Starting Career Navigator API
+2025-09-29 21:36:12,855 - career_navigator - INFO - Starting Career Navigator API
+2025-09-29 21:37:15,000 - career_navigator - INFO - Starting Career Navigator API
+2025-09-29 21:37:17,025 - career_navigator - INFO - Database tables created/verified successfully
+>>>>>>> 0f4b281db2ba41d378b4cb67690ff3f4489e9c5e
+=======
+>>>>>>> 636874d5157448460466f7de5c4f8363f6805c26

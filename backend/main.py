@@ -56,34 +56,23 @@ except Exception as e:
     logger.error(f"Error creating database tables: {str(e)}")
     raise
 
-# Performance monitoring middleware
-class PerformanceMiddleware:
-    async def __call__(self, request: Request, call_next):
-        start_time = time.time()
-        
-        # Process the request
-        response = await call_next(request)
-        
-        # Calculate processing time
-        process_time = time.time() - start_time
-        
-        # Log request details
-        log_data = {
-            "timestamp": datetime.now().isoformat(),
-            "method": request.method,
-            "path": request.url.path,
-            "client": request.client.host if request.client else "unknown",
-            "process_time_ms": round(process_time * 1000, 2),
-            "status_code": response.status_code
-        }
-        
-        # Log as JSON for structured logging
-        logger.info(f"Request processed: {json.dumps(log_data)}")
-        
-        # Add processing time header
-        response.headers["X-Process-Time"] = str(process_time)
-        
-        return response
+# Performance monitoring middleware (removed due to compatibility issues)
+# class PerformanceMiddleware:
+#     async def __call__(self, request: Request, call_next):
+#         start_time = time.time()
+#         response = await call_next(request)
+#         process_time = time.time() - start_time
+#         log_data = {
+#             "timestamp": datetime.now().isoformat(),
+#             "method": request.method,
+#             "path": request.url.path,
+#             "client": request.client.host if request.client else "unknown",
+#             "process_time_ms": round(process_time * 1000, 2),
+#             "status_code": response.status_code
+#         }
+#         logger.info(f"Request processed: {json.dumps(log_data)}")
+#         response.headers["X-Process-Time"] = str(process_time)
+#         return response
 
 # Initialize FastAPI with updated version
 app = FastAPI(
@@ -104,8 +93,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Add performance monitoring middleware
-app.add_middleware(PerformanceMiddleware)
+# Add performance monitoring middleware (commented out due to compatibility issues)
+# app.add_middleware(PerformanceMiddleware)
 
 # Include routers
 app.include_router(auth.router)
