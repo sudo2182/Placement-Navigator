@@ -22,6 +22,7 @@
 2025-09-29 12:51:10,953 - career_navigator - INFO - Starting Career Navigator API
 2025-09-29 12:51:12,709 - career_navigator - INFO - Database tables created/verified successfully
 <<<<<<< HEAD
+<<<<<<< HEAD
 2025-09-30 00:18:09,280 - career_navigator - INFO - Starting Career Navigator API
 2025-09-30 00:18:11,484 - career_navigator - INFO - Database tables created/verified successfully
 2025-09-30 00:18:33,525 - career_navigator - INFO - Starting Career Navigator API
@@ -48,3 +49,5 @@
 2025-09-29 21:37:15,000 - career_navigator - INFO - Starting Career Navigator API
 2025-09-29 21:37:17,025 - career_navigator - INFO - Database tables created/verified successfully
 >>>>>>> 0f4b281db2ba41d378b4cb67690ff3f4489e9c5e
+=======
+>>>>>>> 636874d5157448460466f7de5c4f8363f6805c26

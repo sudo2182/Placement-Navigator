@@ -1,0 +1,44 @@
+JOHN SMITH
+Email: john.smith@email.com | Phone: +1-234-567-8900 | LinkedIn: linkedin.com/in/johnsmith | GitHub: github.com/johnsmith | Location: New York, NY | Age: 22
+
+EDUCATION
+Bachelor of Technology in Computer Science Engineering in Computer Science Engineering (Current-2025)
+ABC University, New York | CGPA: 8.5/10
+12th Grade: XYZ School, New York (2022) | Score: 92%
+10th Grade: XYZ School, New York (2020) | Score: 90%
+
+TECHNICAL SKILLS
+Programming Languages: Java, JavaScript
+Tools & Frameworks: RESTful APIs, React
+
+PROJECTS
+E-Commerce Platform (2024)
+• Built scalable e-commerce application using React frontend and Node.js backend with secure payment integration using Stripe API. Deployed on AWS with auto-scaling capabilities, serving 1000+ concurrent users.
+• Technologies: React, Node.js, Express.js, PostgreSQL, AWS, Stripe API
+
+Mobile Task Management App (2023)
+• Created cross-platform mobile app using React Native with offline synchronization and push notifications. Integrated with REST APIs and implemented secure user authentication.
+• Technologies: React Native, Node.js, MongoDB, Firebase, JWT
+
+Real-time Chat Application (2023)
+• Developed real-time chat application using WebSockets with React frontend and Node.js backend. Implemented message encryption and file sharing capabilities with 99.9% uptime.
+• Technologies: React, Node.js, WebSockets, Socket.IO, MongoDB
+
+INTERNSHIPS
+Software Development Intern - TechCorp Inc. (Jun-Aug 2024)
+• Developed microservices architecture using Docker and Kubernetes. Optimized database queries resulting in 40% performance improvement. Collaborated with senior developers on high-traffic web applications.
+
+Full Stack Developer Intern - StartupXYZ (Jun-Aug 2023)
+• Built full-stack web applications using MERN stack. Implemented user authentication and authorization systems. Participated in agile development process and daily standups.
+
+CERTIFICATIONS
+• AWS Certified Cloud Practitioner - Amazon Web Services (2024)
+• Kubernetes Application Developer - Cloud Native Computing Foundation (2024)
+• Google Cloud Associate Cloud Engineer - Google Cloud (2024)
+• Microsoft Azure Fundamentals - Microsoft (2023)
+
+EXTRACURRICULAR ACTIVITIES
+President, Computer Science Society | National Level Coding Competition Winner | Volunteer at Local Tech Meetups | Member of IEEE Computer Society
+
+LANGUAGES
+English (Native), Spanish (Intermediate), French (Basic)
