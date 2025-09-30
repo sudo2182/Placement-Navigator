@@ -9,10 +9,14 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Eye, EyeOff, Mail, Lock, User, ArrowLeft, AlertCircle, GraduationCap, Users, Shield } from "lucide-react"
 import Link from "next/link"
+import { useAuthStore } from "@/store/auth"
+import { useRouter } from "next/navigation"
 
 type UserRole = "student" | "faculty" | "tpo" | null
 
 export default function LoginPage() {
+  const { login, isLoading } = useAuthStore()
+  const router = useRouter()
   const [selectedRole, setSelectedRole] = useState<UserRole>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [loginData, setLoginData] = useState({
@@ -20,37 +24,30 @@ export default function LoginPage() {
     password: ""
   })
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [forgotPasswordSent, setForgotPasswordSent] = useState(false)
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
     setError("")
 
     if (!selectedRole) {
       setError("Please select your role first.")
-      setIsLoading(false)
       return
     }
 
     try {
-      // TODO: Implement actual login API call
-      await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
+      await login(loginData.email, loginData.password)
       
       // Redirect based on selected role
-      window.location.href = `/dashboard/${selectedRole}`
-    } catch (err) {
-      setError("Invalid credentials. Please try again.")
-    } finally {
-      setIsLoading(false)
+      router.push(`/dashboard/${selectedRole}`)
+    } catch (err: any) {
+      setError(err.response?.data?.detail || "Invalid credentials. Please try again.")
     }
   }
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
 
     try {
       // TODO: Implement actual forgot password API call
@@ -58,8 +55,6 @@ export default function LoginPage() {
       setForgotPasswordSent(true)
     } catch (err) {
       setError("Failed to send reset email. Please try again.")
-    } finally {
-      setIsLoading(false)
     }
   }
 

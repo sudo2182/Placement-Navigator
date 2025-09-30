@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Placement Navigator - Test Frontend</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .section {
+            margin-bottom: 40px;
+            padding: 25px;
+            border: 2px solid #e1e8ed;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+        
+        .section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #34495e;
+        }
+        
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: transform 0.2s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+        }
+        
+        .btn-info {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .response.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .response.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .response.info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status.healthy {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .card {
+            background: white;
+            border: 1px solid #e1e8ed;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .card h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Placement Navigator</h1>
+            <p>AI-Powered University Placement Management System</p>
+            <div id="apiStatus" class="status error">Checking API...</div>
+        </div>
+        
+        <div class="content">
+            <div class="grid">
+                <!-- Health Check Section -->
+                <div class="card">
+                    <h3>🏥 System Health</h3>
+                    <button class="btn btn-info" onclick="checkHealth()">Check API Health</button>
+                    <div id="healthResponse" class="response" style="display: none;"></div>
+                </div>
+                
+                <!-- User Registration Section -->
+                <div class="card">
+                    <h3>👤 User Registration</h3>
+                    <div class="form-group">
+                        <label>Email:</label>
+                        <input type="email" id="regEmail" placeholder="user@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Password:</label>
+                        <input type="password" id="regPassword" placeholder="password123">
+                    </div>
+                    <div class="form-group">
+                        <label>Role:</label>
+                        <select id="regRole">
+                            <option value="student">Student</option>
+                            <option value="tpo">TPO</option>
+                            <option value="employer">Employer</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Name:</label>
+                        <input type="text" id="regName" placeholder="John Doe">
+                    </div>
+                    <button class="btn btn-success" onclick="registerUser()">Register User</button>
+                    <div id="registerResponse" class="response" style="display: none;"></div>
+                </div>
+                
+                <!-- User Login Section -->
+                <div class="card">
+                    <h3>🔐 User Login</h3>
+                    <div class="form-group">
+                        <label>Email:</label>
+                        <input type="email" id="loginEmail" placeholder="user@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Password:</label>
+                        <input type="password" id="loginPassword" placeholder="password123">
+                    </div>
+                    <button class="btn btn-info" onclick="loginUser()">Login</button>
+                    <div id="loginResponse" class="response" style="display: none;"></div>
+                </div>
+                
+                <!-- Job Management Section -->
+                <div class="card">
+                    <h3>💼 Job Management</h3>
+                    <div class="form-group">
+                        <label>Job Title:</label>
+                        <input type="text" id="jobTitle" placeholder="Software Engineer">
+                    </div>
+                    <div class="form-group">
+                        <label>Company:</label>
+                        <input type="text" id="jobCompany" placeholder="Tech Corp">
+                    </div>
+                    <div class="form-group">
+                        <label>Location:</label>
+                        <input type="text" id="jobLocation" placeholder="San Francisco, CA">
+                    </div>
+                    <div class="form-group">
+                        <label>Description:</label>
+                        <textarea id="jobDescription" placeholder="Job description..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Requirements (comma-separated):</label>
+                        <input type="text" id="jobRequirements" placeholder="Python, JavaScript, React">
+                    </div>
+                    <div class="form-group">
+                        <label>Salary Range:</label>
+                        <input type="text" id="jobSalary" placeholder="$80,000 - $120,000">
+                    </div>
+                    <button class="btn btn-success" onclick="createJob()">Create Job</button>
+                    <button class="btn btn-info" onclick="getJobs()">Get All Jobs</button>
+                    <div id="jobResponse" class="response" style="display: none;"></div>
+                </div>
+                
+                <!-- Analytics Section -->
+                <div class="card">
+                    <h3>📊 Analytics</h3>
+                    <button class="btn btn-info" onclick="getAnalytics()">Get Student Progress</button>
+                    <div id="analyticsResponse" class="response" style="display: none;"></div>
+                </div>
+                
+                <!-- AI Matching Section -->
+                <div class="card">
+                    <h3>🤖 AI Matching</h3>
+                    <div class="form-group">
+                        <label>Job ID for Matching:</label>
+                        <input type="number" id="matchJobId" placeholder="1">
+                    </div>
+                    <button class="btn btn-warning" onclick="findMatches()">Find Matches</button>
+                    <div id="matchResponse" class="response" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Processing request...</p>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        let authToken = null;
+        let currentUser = null;
+
+        // Check API health on page load
+        window.onload = function() {
+            checkHealth();
+        };
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function showResponse(elementId, data, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `response ${type}`;
+            element.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+        }
+
+        async function checkHealth() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                const statusElement = document.getElementById('apiStatus');
+                if (response.ok) {
+                    statusElement.textContent = 'API Healthy';
+                    statusElement.className = 'status healthy';
+                } else {
+                    statusElement.textContent = 'API Error';
+                    statusElement.className = 'status error';
+                }
+                
+                showResponse('healthResponse', data, response.ok ? 'success' : 'error');
+            } catch (error) {
+                const statusElement = document.getElementById('apiStatus');
+                statusElement.textContent = 'API Offline';
+                statusElement.className = 'status error';
+                showResponse('healthResponse', { error: error.message }, 'error');
+            }
+        }
+
+        async function registerUser() {
+            showLoading();
+            try {
+                const userData = {
+                    email: document.getElementById('regEmail').value,
+                    password: document.getElementById('regPassword').value,
+                    role: document.getElementById('regRole').value,
+                    profile_data: {
+                        name: document.getElementById('regName').value,
+                        university: 'Test University',
+                        major: 'Computer Science',
+                        graduation_year: 2024
+                    }
+                };
+
+                const response = await fetch(`${API_BASE}/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(userData)
+                });
+
+                const data = await response.json();
+                showResponse('registerResponse', data, response.ok ? 'success' : 'error');
+                
+                if (response.ok) {
+                    authToken = data.access_token;
+                    currentUser = data.user;
+                }
+            } catch (error) {
+                showResponse('registerResponse', { error: error.message }, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function loginUser() {
+            showLoading();
+            try {
+                const loginData = {
+                    email: document.getElementById('loginEmail').value,
+                    password: document.getElementById('loginPassword').value
+                };
+
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(loginData)
+                });
+
+                const data = await response.json();
+                showResponse('loginResponse', data, response.ok ? 'success' : 'error');
+                
+                if (response.ok) {
+                    authToken = data.access_token;
+                    currentUser = data.user;
+                }
+            } catch (error) {
+                showResponse('loginResponse', { error: error.message }, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function createJob() {
+            if (!authToken) {
+                showResponse('jobResponse', { error: 'Please login first' }, 'error');
+                return;
+            }
+
+            showLoading();
+            try {
+                const jobData = {
+                    title: document.getElementById('jobTitle').value,
+                    company: document.getElementById('jobCompany').value,
+                    location: document.getElementById('jobLocation').value,
+                    description: document.getElementById('jobDescription').value,
+                    requirements: document.getElementById('jobRequirements').value.split(',').map(r => r.trim()),
+                    salary_range: document.getElementById('jobSalary').value,
+                    job_type: 'full-time',
+                    experience_level: 'entry',
+                    application_deadline: '2024-12-31T23:59:59'
+                };
+
+                const response = await fetch(`${API_BASE}/jobs/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(jobData)
+                });
+
+                const data = await response.json();
+                showResponse('jobResponse', data, response.ok ? 'success' : 'error');
+            } catch (error) {
+                showResponse('jobResponse', { error: error.message }, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function getJobs() {
+            showLoading();
+            try {
+                const response = await fetch(`${API_BASE}/jobs/`);
+                const data = await response.json();
+                showResponse('jobResponse', data, response.ok ? 'success' : 'error');
+            } catch (error) {
+                showResponse('jobResponse', { error: error.message }, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function getAnalytics() {
+            if (!authToken) {
+                showResponse('analyticsResponse', { error: 'Please login first' }, 'error');
+                return;
+            }
+
+            showLoading();
+            try {
+                const response = await fetch(`${API_BASE}/analytics/student/progress`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                const data = await response.json();
+                showResponse('analyticsResponse', data, response.ok ? 'success' : 'error');
+            } catch (error) {
+                showResponse('analyticsResponse', { error: error.message }, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function findMatches() {
+            if (!authToken) {
+                showResponse('matchResponse', { error: 'Please login first' }, 'error');
+                return;
+            }
+
+            showLoading();
+            try {
+                const jobId = document.getElementById('matchJobId').value;
+                const response = await fetch(`${API_BASE}/jobs/${jobId}/find-matches`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({})
+                });
+                const data = await response.json();
+                showResponse('matchResponse', data, response.ok ? 'success' : 'error');
+            } catch (error) {
+                showResponse('matchResponse', { error: error.message }, 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+    </script>
+</body>
+</html>

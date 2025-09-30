@@ -46,15 +46,10 @@ logger.info("Starting Career Navigator API")
 
 sys.path.append('../')
 from shared.models import create_tables
-from backend.routers import auth, jobs, analytics
+from backend.routers import auth, jobs, analytics, job_events, shortlists, opt_out, bulletin, resources, courses, notifications
 
-# Create database tables
-try:
-    create_tables()
-    logger.info("Database tables created/verified successfully")
-except Exception as e:
-    logger.error(f"Error creating database tables: {str(e)}")
-    raise
+# Database tables will be created on first use
+# create_tables() is called lazily when needed
 
 # Performance monitoring middleware (removed due to compatibility issues)
 # class PerformanceMiddleware:
@@ -100,6 +95,13 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(jobs.router)
 app.include_router(analytics.router)
+app.include_router(job_events.router)
+app.include_router(shortlists.router)
+app.include_router(opt_out.router)
+app.include_router(bulletin.router)
+app.include_router(resources.router)
+app.include_router(courses.router)
+app.include_router(notifications.router)
 
 @app.get("/")
 async def root() -> Dict[str, Any]:

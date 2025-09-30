@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import AppLayout from "@/components/AppLayout"
+import { useAuthStore } from "@/store/auth"
+import { api } from "@/lib/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -26,17 +28,43 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 
-// Mock data
-const studentData = {
-  name: "Darsh Iyer",
-  sapid: "60004210001",
-  course: "Computer Engineering",
-  year: "Final Year",
-  cgpa: "8.5",
-  profileCompletion: 85,
-  appliedJobs: 12,
-  interviewsScheduled: 3,
-  offersReceived: 1
+// Real data from API
+const useStudentData = () => {
+  const { user } = useAuthStore()
+  const [studentData, setStudentData] = useState({
+    name: user?.profile_data?.name || "Student",
+    sapid: user?.id?.toString() || "N/A",
+    course: user?.profile_data?.major || "Computer Science",
+    year: user?.profile_data?.graduation_year?.toString() || "Final Year",
+    cgpa: user?.profile_data?.gpa?.toString() || "N/A",
+    profileCompletion: 85,
+    appliedJobs: 0,
+    interviewsScheduled: 0,
+    offersReceived: 0
+  })
+  const [jobs, setJobs] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const jobsResponse = await api.jobs.list()
+        setJobs(jobsResponse.data || [])
+        setStudentData(prev => ({
+          ...prev,
+          appliedJobs: jobsResponse.data?.length || 0
+        }))
+      } catch (error) {
+        console.error('Error fetching data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [])
+
+  return { studentData, jobs, loading }
 }
 
 const bulletinData = [
@@ -118,7 +146,7 @@ const dashboardNavItems = [
 ]
 
 // Components
-function StudentHeader() {
+function StudentHeader({ studentData }: { studentData: any }) {
   return (
     <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700">
       <div className="p-4 sm:p-6">
@@ -281,7 +309,7 @@ function DashboardNav() {
   )
 }
 
-function QuickStats() {
+function QuickStats({ studentData }: { studentData: any }) {
   const stats = [
     {
       label: "Applications Sent",
@@ -335,21 +363,56 @@ function QuickStats() {
 }
 
 export default function StudentDashboard() {
-  // Mock user data for student role
+  const { studentData, jobs, loading } = useStudentData()
+  const { user } = useAuthStore()
+  
+  // Redirect to login if not authenticated
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            Please log in to access your dashboard
+          </h1>
+          <a 
+            href="/login" 
+            className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            Go to Login
+          </a>
+        </div>
+      </div>
+    )
+  }
+  
+  // Use real user data
   const mockUser = {
-    id: "1",
-    name: "Darsh Iyer",
-    email: "student@example.com",
+    id: user?.id?.toString() || "1",
+    name: user?.profile_data?.name || "Student",
+    email: user?.email || "student@example.com",
     role: "student" as const,
-    sapid: "60004210001",
-    course: "Computer Engineering",
-    year: "Final Year"
+    sapid: user?.id?.toString() || "N/A",
+    course: user?.profile_data?.major || "Computer Science",
+    year: user?.profile_data?.graduation_year?.toString() || "Final Year"
+  }
+
+  if (loading) {
+    return (
+      <AppLayout user={mockUser}>
+        <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400">Loading dashboard...</p>
+          </div>
+        </div>
+      </AppLayout>
+    )
   }
 
   return (
     <AppLayout user={mockUser}>
       <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
-        <StudentHeader />
+        <StudentHeader studentData={studentData} />
         
         <div className="p-4 sm:p-6 space-y-6 sm:space-y-8">
           {/* Quick Stats */}
@@ -357,7 +420,7 @@ export default function StudentDashboard() {
             <h2 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6">
               Quick Overview
             </h2>
-            <QuickStats />
+            <QuickStats studentData={studentData} />
           </section>
 
           {/* Main Content Grid */}

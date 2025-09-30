@@ -43,17 +43,40 @@ class MatchingService:
     
     def __init__(self):
         """Initialize the matching service with OpenAI client and cache"""
-        # Initialize OpenAI client with proper error handling
+        self.ai_available = False
+        self.simple_service = None
+        
+        # Try to initialize AI services
         try:
-            self.openai_client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        except TypeError:
-            # Fallback for older versions of the OpenAI client
-            openai.api_key = os.getenv("OPENAI_API_KEY")
-            self.openai_client = openai
+            # Check if OpenAI API key is available
+            if not os.getenv("OPENAI_API_KEY"):
+                raise ValueError("OpenAI API key not found")
             
-        self.embedding_cache = {}  # In-memory cache for embeddings
-        self.cache_ttl = 3600  # 1 hour TTL
-        logger.info("MatchingService initialized with OpenAI embeddings")
+            # Initialize OpenAI client with proper error handling
+            try:
+                self.openai_client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+            except TypeError:
+                # Fallback for older versions of the OpenAI client
+                openai.api_key = os.getenv("OPENAI_API_KEY")
+                self.openai_client = openai
+                
+            self.embedding_cache = {}  # In-memory cache for embeddings
+            self.cache_ttl = 3600  # 1 hour TTL
+            self.ai_available = True
+            logger.info("MatchingService initialized with OpenAI embeddings")
+            
+        except Exception as e:
+            logger.warning(f"AI services not available: {str(e)}")
+            logger.info("Falling back to simple rule-based matching")
+            
+            # Import and initialize simple matching service
+            try:
+                from .simple_matching_service import SimpleMatchingService
+                self.simple_service = SimpleMatchingService()
+                logger.info("Simple matching service initialized as fallback")
+            except Exception as fallback_error:
+                logger.error(f"Failed to initialize fallback service: {str(fallback_error)}")
+                raise
     
     async def find_matches(
         self, 
@@ -75,6 +98,11 @@ class MatchingService:
             Dictionary with matches, method used, and metadata
         """
         logger.info(f"Starting job matching for job_id={job_id}, min_score={min_score}")
+        
+        # Use simple matching if AI is not available
+        if not self.ai_available and self.simple_service:
+            logger.info("Using simple rule-based matching (AI not available)")
+            return await self.simple_service.find_matches(job_id, db, min_score, limit)
         
         try:
             # Get job details

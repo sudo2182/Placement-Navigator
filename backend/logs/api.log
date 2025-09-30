@@ -51,6 +51,7 @@
 >>>>>>> 0f4b281db2ba41d378b4cb67690ff3f4489e9c5e
 =======
 >>>>>>> 636874d5157448460466f7de5c4f8363f6805c26
+<<<<<<< Updated upstream
 2025-09-30 08:41:43,616 - career_navigator - INFO - Starting Career Navigator API
 2025-09-30 08:41:44,322 - career_navigator - INFO - Database tables created/verified successfully
 2025-09-30 08:41:44,351 - career_navigator - INFO - Starting uvicorn server on port 8000
@@ -60,3 +61,165 @@
 2025-09-30 08:41:44,910 - career_navigator - INFO - Starting Career Navigator API
 2025-09-30 08:41:44,969 - career_navigator - INFO - Database tables created/verified successfully
 2025-09-30 08:41:44,969 - career_navigator - INFO - Database tables created/verified successfully
+=======
+2025-09-30 08:53:09,703 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 08:53:11,416 - career_navigator - INFO - Database tables created/verified successfully
+2025-09-30 08:53:17,960 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 08:53:19,142 - career_navigator - INFO - Database tables created/verified successfully
+2025-09-30 08:53:25,355 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 08:53:40,370 - career_navigator - INFO - Database tables created/verified successfully
+2025-09-30 08:54:04,362 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 08:54:05,565 - career_navigator - INFO - Database tables created/verified successfully
+2025-09-30 09:07:02,038 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 09:07:04,659 - career_navigator - ERROR - Error creating database tables: (psycopg2.OperationalError) connection to server at "db.spdvoluvixldctmjmere.supabase.co" (2406:da1a:6b0:f61b:58cf:f2e5:921a:9fd3), port 5432 failed: No route to host
+	Is the server running on that host and accepting TCP/IP connections?
+connection to server at "db.spdvoluvixldctmjmere.supabase.co" (2406:da1a:6b0:f61b:58cf:f2e5:921a:9fd3), port 5432 failed: No route to host
+	Is the server running on that host and accepting TCP/IP connections?
+
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2025-09-30 09:07:06,102 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 09:07:11,522 - career_navigator - INFO - Database tables created/verified successfully
+2025-09-30 09:07:29,278 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 09:07:30,492 - career_navigator - INFO - Database tables created/verified successfully
+2025-09-30 09:07:45,588 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 09:07:46,771 - career_navigator - INFO - Database tables created/verified successfully
+2025-09-30 09:07:51,180 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 09:07:52,322 - career_navigator - INFO - Database tables created/verified successfully
+2025-09-30 09:07:53,066 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 09:07:54,136 - career_navigator - INFO - Database tables created/verified successfully
+2025-09-30 09:07:54,861 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 09:07:55,996 - career_navigator - INFO - Database tables created/verified successfully
+2025-09-30 09:07:56,794 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 09:07:57,952 - career_navigator - INFO - Database tables created/verified successfully
+2025-09-30 09:07:58,588 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 09:07:59,684 - career_navigator - INFO - Database tables created/verified successfully
+>>>>>>> Stashed changes
+2025-09-30 09:22:47,933 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 09:23:33,044 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 09:23:40,261 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 09:23:53,787 - career_navigator - INFO - Database tables created/verified successfully
+2025-09-30 13:49:11,817 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 13:49:14,478 - career_navigator - INFO - Database tables created/verified successfully
+2025-09-30 14:04:06,579 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 14:04:11,141 - career_navigator - INFO - Database tables created/verified successfully
+2025-09-30 14:04:11,169 - career_navigator - INFO - Starting uvicorn server on port 8000
+2025-09-30 14:04:11,411 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 14:04:13,052 - career_navigator - INFO - Database tables created/verified successfully
+2025-09-30 14:04:13,102 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 14:04:13,102 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 14:04:13,497 - career_navigator - INFO - Database tables created/verified successfully
+2025-09-30 14:04:13,497 - career_navigator - INFO - Database tables created/verified successfully
+2025-09-30 20:18:00,968 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:18:06,961 - career_navigator - INFO - Database tables created/verified successfully
+2025-09-30 20:18:06,991 - career_navigator - INFO - Starting uvicorn server on port 8000
+2025-09-30 20:18:07,232 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:18:07,928 - career_navigator - INFO - Database tables created/verified successfully
+2025-09-30 20:18:07,999 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:18:07,999 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:18:08,066 - career_navigator - INFO - Database tables created/verified successfully
+2025-09-30 20:18:08,066 - career_navigator - INFO - Database tables created/verified successfully
+2025-09-30 20:18:16,297 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:18:17,008 - career_navigator - INFO - Database tables created/verified successfully
+2025-09-30 20:18:17,068 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:18:17,068 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:18:17,136 - career_navigator - INFO - Database tables created/verified successfully
+2025-09-30 20:18:17,136 - career_navigator - INFO - Database tables created/verified successfully
+2025-09-30 20:18:54,176 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:18:54,977 - career_navigator - INFO - Database tables created/verified successfully
+2025-09-30 20:18:55,040 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:18:55,040 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:18:55,112 - career_navigator - INFO - Database tables created/verified successfully
+2025-09-30 20:18:55,112 - career_navigator - INFO - Database tables created/verified successfully
+2025-09-30 20:19:51,464 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:19:52,096 - career_navigator - INFO - Starting uvicorn server on port 8000
+2025-09-30 20:19:52,322 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:19:52,777 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:19:52,777 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:20:48,693 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:20:49,319 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:20:49,319 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:21:57,568 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:21:58,310 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:21:58,310 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:22:14,653 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:22:14,946 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:22:15,692 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:22:15,692 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:22:31,399 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:22:32,208 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:22:32,208 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:22:47,754 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:22:48,506 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:22:48,506 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:23:08,450 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:23:09,210 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:23:09,210 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:23:35,603 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:23:36,338 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:23:36,338 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:23:56,654 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:23:57,526 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:23:57,526 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:24:00,734 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:24:06,505 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:25:14,556 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:25:33,189 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:25:33,898 - career_navigator - INFO - Starting uvicorn server on port 8000
+2025-09-30 20:25:34,170 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:25:34,788 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:25:34,788 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:26:16,010 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:26:16,699 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:26:16,699 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:26:28,984 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:26:29,665 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:26:29,665 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:26:32,239 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:26:32,753 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:26:32,753 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:26:59,450 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:27:00,153 - career_navigator - INFO - Starting uvicorn server on port 8000
+2025-09-30 20:27:00,449 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:27:01,136 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:27:01,136 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:27:29,363 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:27:30,053 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:27:30,053 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:27:38,981 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:27:39,666 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:27:39,666 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:27:42,700 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:27:43,217 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:27:43,217 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:27:54,703 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:27:55,212 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:27:55,212 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:28:14,615 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:28:15,302 - career_navigator - INFO - Starting uvicorn server on port 8000
+2025-09-30 20:28:15,563 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:28:16,256 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:28:16,256 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:29:18,085 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:29:18,895 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:29:18,895 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:29:44,327 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:29:45,116 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:29:45,116 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:30:12,614 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:30:13,285 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:30:13,285 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:30:16,474 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:30:16,989 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:30:16,989 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:30:27,877 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:30:28,462 - career_navigator - INFO - Starting uvicorn server on port 8000
+2025-09-30 20:30:28,762 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:30:29,451 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:30:29,451 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:30:49,975 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:30:50,291 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:30:51,125 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:30:51,125 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:31:43,617 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:31:44,392 - career_navigator - INFO - Starting Career Navigator API
+2025-09-30 20:31:44,392 - career_navigator - INFO - Starting Career Navigator API

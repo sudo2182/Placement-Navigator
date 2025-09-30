@@ -68,13 +68,14 @@ async def get_current_user(
 def require_role(required_roles: list):
     def role_checker(current_user: User = Depends(get_current_user)):
         # Make role comparison case-insensitive
-        user_role_lower = current_user.role.lower()
+        user_role_str = str(current_user.role.value) if hasattr(current_user.role, 'value') else str(current_user.role)
+        user_role_lower = user_role_str.lower()
         required_roles_lower = [role.lower() for role in required_roles]
         
         if user_role_lower not in required_roles_lower:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Access denied. Required roles: {required_roles}"
+                detail=f"Access denied. Required roles: {required_roles}. User role: {current_user.role}"
             )
         return current_user
     return role_checker

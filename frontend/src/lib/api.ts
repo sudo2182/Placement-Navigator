@@ -24,6 +24,7 @@ export const api = {
   auth: {
     register: (data: any) => apiClient.post('/auth/register', data),
     login: (data: any) => apiClient.post('/auth/login', data),
+    token: (data: any) => apiClient.post('/auth/token', data),
   },
   jobs: {
     list: () => apiClient.get('/jobs/'),
