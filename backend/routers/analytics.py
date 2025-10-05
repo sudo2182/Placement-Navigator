@@ -5,7 +5,7 @@ import sys
 sys.path.append('../')
 from shared.models import get_db, User
 from backend.auth import get_current_user, require_role
-from backend.services.mcp_client import mcp_client
+from backend.services.simple_mcp_client import simple_mcp_client
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
@@ -17,7 +17,7 @@ async def get_student_progress(
     """Get AI-powered progress analysis for current student"""
     
     try:
-        result = await mcp_client.analyze_student_progress(
+        result = await simple_mcp_client.analyze_student_progress(
             current_user.id,
             "progress"
         )
@@ -35,7 +35,7 @@ async def get_job_recommendations(
     """Get AI-powered job recommendations"""
     
     try:
-        result = await mcp_client.analyze_student_progress(
+        result = await simple_mcp_client.analyze_student_progress(
             current_user.id,
             "recommendations"
         )
@@ -53,7 +53,7 @@ async def get_skill_gap_analysis(
     """Get AI-powered skill gap analysis"""
     
     try:
-        result = await mcp_client.analyze_student_progress(
+        result = await simple_mcp_client.analyze_student_progress(
             current_user.id,
             "skill_gaps"
         )
@@ -72,7 +72,7 @@ async def get_any_student_progress(
     """Get progress analysis for any student (TPO/Faculty only)"""
     
     try:
-        result = await mcp_client.analyze_student_progress(
+        result = await simple_mcp_client.analyze_student_progress(
             student_id,
             "progress"
         )

@@ -7,7 +7,7 @@ sys.path.append('../')
 from shared.models import get_db, Job, User, Application, AIMatch
 from backend.auth import get_current_user, require_role
 from backend.schemas import JobCreate, JobResponse, ApplicationCreate, ApplicationResponse, AIMatchResponse
-from backend.services.mcp_client import mcp_client
+from backend.services.simple_mcp_client import simple_mcp_client
 from backend.services.matching_service import matching_service
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
@@ -185,7 +185,7 @@ async def apply_to_job_with_ai(
 async def trigger_ai_matching(job_id: int):
     """Background task to trigger AI matching"""
     try:
-        result = await mcp_client.batch_process_new_job(job_id)
+        result = await simple_mcp_client.batch_process_new_job(job_id)
         print(f"AI matching completed for job {job_id}: {result.get('matches_found', 0)} matches found")
     except Exception as e:
         print(f"Error in AI matching for job {job_id}: {e}")

@@ -108,6 +108,23 @@ class Notification(Base):
     related_job_id = Column(Integer, ForeignKey('jobs.id'), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+class FacultyResource(Base):
+    __tablename__ = "faculty_resources"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    faculty_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    title = Column(String, nullable=False)
+    description = Column(Text)
+    resource_type = Column(String, nullable=False)  # document, video, link
+    file_path = Column(String)  # For uploaded files
+    external_url = Column(String)  # For external links
+    tags = Column(JSON)  # Array of tags
+    is_public = Column(Boolean, default=True)
+    views = Column(Integer, default=0)
+    downloads = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
 def get_db():
     db = SessionLocal()
     try:

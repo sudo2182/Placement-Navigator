@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import AppLayout from "@/components/AppLayout"
+import { api } from "@/lib/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -33,78 +34,45 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 
-// Mock data structure
-const initialData = {
+// Default data structure
+const defaultData = {
   personal: {
-    firstName: "Aditya",
-    lastName: "Ray",
-    email: "adityaray@gmail.com",
-    phone: "+91 9876543210",
-    address: "Mumbai, Maharashtra",
-    dateOfBirth: "2002-05-15",
-    gender: "Male",
-    nationality: "Indian",
-    linkedin: "https://linkedin.com/in/adityaray",
-    github: "https://github.com/adityaray",
-    portfolio: "https://adityaray.dev"
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    address: "",
+    dateOfBirth: "",
+    gender: "",
+    nationality: "",
+    linkedin: "",
+    github: "",
+    portfolio: ""
   },
   academic: {
-    sapid: "60004210001",
-    course: "Computer Engineering",
-    specialization: "Artificial Intelligence",
-    year: "Final Year",
-    cgpa: "8.5",
-    semester: "8th",
-    expectedGraduation: "2024-05",
-    tenthMarks: "95.2",
-    tenthBoard: "CBSE",
-    tenthYear: "2018",
-    twelfthMarks: "92.8",
-    twelfthBoard: "CBSE",
-    twelfthYear: "2020"
+    sapid: "",
+    course: "",
+    specialization: "",
+    year: "",
+    cgpa: "",
+    semester: "",
+    expectedGraduation: "",
+    tenthMarks: "",
+    tenthBoard: "",
+    tenthYear: "",
+    twelfthMarks: "",
+    twelfthBoard: "",
+    twelfthYear: ""
   },
-  internships: [
-    {
-      id: 1,
-      company: "Google",
-      position: "Software Engineering Intern",
-      duration: "Jun 2023 - Aug 2023",
-      location: "Bangalore, India",
-      description: "Worked on machine learning algorithms for search optimization"
-    }
-  ],
-  projects: [
-    {
-      id: 1,
-      title: "Campus Connect",
-      technologies: "Next.js, TypeScript, Tailwind CSS",
-      duration: "Jan 2024 - Present",
-      description: "A comprehensive placement management system for colleges",
-      github: "https://github.com/darshiyer/campus-connect"
-    }
-  ],
+  internships: [],
+  projects: [],
   skills: {
-    technical: ["JavaScript", "TypeScript", "React", "Node.js", "Python", "Java"],
-    tools: ["Git", "Docker", "AWS", "MongoDB", "PostgreSQL"],
-    soft: ["Leadership", "Communication", "Problem Solving", "Team Work"]
+    technical: [],
+    tools: [],
+    soft: []
   },
-  achievements: [
-    {
-      id: 1,
-      title: "Winner - Smart India Hackathon 2023",
-      date: "2023-12",
-      description: "Led a team of 6 to develop an AI-powered solution for traffic management"
-    }
-  ],
-  certifications: [
-    {
-      id: 1,
-      name: "AWS Certified Solutions Architect",
-      issuer: "Amazon Web Services",
-      date: "2023-10",
-      credentialId: "AWS-SAA-123456"
-    }
-  ]
+  achievements: [],
+  certifications: []
 }
 
 function PersonalDetailsTab({ data, onChange }: any) {
@@ -694,10 +662,12 @@ function SkillsTab({ data, onChange }: any) {
 }
 
 export default function ResumeDataPage() {
-  const [formData, setFormData] = useState(initialData)
+  const [formData, setFormData] = useState(defaultData)
   const [activeTab, setActiveTab] = useState("personal")
   const [isSaving, setIsSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const updatePersonalData = (field: string, value: string) => {
     setFormData(prev => ({
@@ -728,13 +698,38 @@ export default function ResumeDataPage() {
     }))
   }
 
+  // Load profile data on component mount
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+        const profile = await api.profiles.getMyProfile()
+        if (profile && profile.profile_data) {
+          setFormData(profile.profile_data)
+        }
+      } catch (err) {
+        console.error('Failed to load profile:', err)
+        setError('Failed to load profile data')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    loadProfile()
+  }, [])
+
   const handleSave = async () => {
-    setIsSaving(true)
-    // Mock API call
-    setTimeout(() => {
-      setIsSaving(false)
+    try {
+      setIsSaving(true)
+      setError(null)
+      await api.profiles.updateMyProfile(formData)
       setLastSaved(new Date())
-    }, 1000)
+    } catch (err) {
+      console.error('Failed to save profile:', err)
+      setError('Failed to save profile data')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const calculateCompletion = () => {
@@ -768,6 +763,36 @@ export default function ResumeDataPage() {
   }
 
   const completion = calculateCompletion()
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600 dark:text-gray-400">Loading profile data...</p>
+          </div>
+        </div>
+      </AppLayout>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <AppLayout>
+        <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center">
+          <div className="text-center">
+            <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Error Loading Profile</h2>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
+            <Button onClick={() => window.location.reload()}>Retry</Button>
+          </div>
+        </div>
+      </AppLayout>
+    )
+  }
 
   return (
     <AppLayout>

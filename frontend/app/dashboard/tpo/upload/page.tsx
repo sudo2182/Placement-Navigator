@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useState, useEffect } from "react"
+import { api } from "@/lib/api"
 import AppLayout from "@/components/AppLayout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -445,6 +446,9 @@ export default function TpoUploadPage() {
   const [fileName, setFileName] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [results, setResults] = useState<UploadResult[]>([])
+  const [students, setStudents] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const [branchFilter, setBranchFilter] = useState<string>("")
   const [statusFilter, setStatusFilter] = useState<string>("")
@@ -455,15 +459,37 @@ export default function TpoUploadPage() {
 
   const processUpload = async () => {
     setIsProcessing(true)
-    setTimeout(() => {
-      setResults(demoData)
+    try {
+      // In a real implementation, this would upload the file to the backend
+      // For now, we'll simulate processing
+      setTimeout(() => {
+        setResults(demoData)
+        setIsProcessing(false)
+      }, 600)
+    } catch (err) {
+      console.error('Upload failed:', err)
       setIsProcessing(false)
-    }, 600)
+    }
   }
 
+  // Load students from API
   useEffect(() => {
-    // Auto-load hardcoded demo data on page open
-    setResults(demoData)
+    const loadStudents = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+        const profiles = await api.profiles.listProfiles('student')
+        setStudents(profiles)
+      } catch (err) {
+        console.error('Failed to load students:', err)
+        setError('Failed to load student data')
+        // Fallback to demo data for now
+        setResults(demoData)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    loadStudents()
   }, [])
 
   return (
@@ -528,7 +554,36 @@ export default function TpoUploadPage() {
           </Card>
 
           {/* Results */}
-          {!!results.length && (
+          {isLoading ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                  Loading student data...
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Please wait while we fetch the latest student information
+                </p>
+              </CardContent>
+            </Card>
+          ) : error ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <div className="w-16 h-16 text-red-400 mx-auto mb-4 flex items-center justify-center">
+                  <AlertCircle className="w-8 h-8" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                  Error loading student data
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                  {error}
+                </p>
+                <Button onClick={() => window.location.reload()}>
+                  Try Again
+                </Button>
+              </CardContent>
+            </Card>
+          ) : !!results.length && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2"><CheckCircle className="w-5 h-5" /> Import Results</CardTitle>

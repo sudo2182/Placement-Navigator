@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import AppLayout from "@/components/AppLayout"
+import { api } from "@/lib/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -27,97 +28,31 @@ export default function GithubAnalyzerPage() {
   const [result, setResult] = useState<any | null>(null)
 
   const handleAnalyze = async () => {
-    // Hardcoded analysis to always show Darsh Iyer's repos and skill graph, regardless of input
+    if (!username.trim()) {
+      setError("Please enter a GitHub username")
+      return
+    }
+
     setIsAnalyzing(true)
     setError(null)
 
-    setTimeout(() => {
-      const data = {
-        profile: {
-          name: "Darsh Iyer",
-          username: username || "darshiyer",
-          bio: "Full‑stack developer passionate about scalable systems and developer tools.",
-          location: "Mumbai, India",
-          joined: "Joined Sep 2021",
-        },
-        summary: "Strong portfolio with consistent contributions, solid project structure, and a diverse tech stack across frontend, backend, and DevOps.",
-        repos: [
-          {
-            name: "campus-connect",
-            description: "Monorepo for university placement platform with student, faculty, and TPO dashboards.",
-            stars: 42,
-            forks: 8,
-            language: "TypeScript",
-            topics: ["nextjs", "tailwind", "node", "postgres", "turborepo"],
-            activity: "Active",
-            lastUpdate: "Updated 2 days ago"
-          },
-          {
-            name: "ai-resume-maker",
-            description: "LLM-powered resume generator and ATS optimizer.",
-            stars: 31,
-            forks: 5,
-            language: "Python",
-            topics: ["fastapi", "llm", "nlp", "docker"],
-            activity: "Active",
-            lastUpdate: "Updated 5 days ago"
-          },
-          {
-            name: "devops-pipelines",
-            description: "Reusable GitHub Actions workflows for CI/CD across Node and Python services.",
-            stars: 24,
-            forks: 6,
-            language: "YAML",
-            topics: ["github-actions", "ci", "cd", "docker", "aws"],
-            activity: "Maintained",
-            lastUpdate: "Updated 1 week ago"
-          },
-          {
-            name: "data-structures-and-algorithms",
-            description: "Curated problems and solutions with explanations and complexity analyses.",
-            stars: 18,
-            forks: 3,
-            language: "JavaScript",
-            topics: ["algorithms", "leetcode", "practice"],
-            activity: "Maintained",
-            lastUpdate: "Updated 3 weeks ago"
-          },
-          {
-            name: "ml-experiments",
-            description: "Experiments with classical ML and MLOps workflows.",
-            stars: 15,
-            forks: 4,
-            language: "Python",
-            topics: ["scikit-learn", "mlops", "dvc"],
-            activity: "Exploratory",
-            lastUpdate: "Updated 1 month ago"
-          }
-        ],
-        skillGraph: [
-          { label: "Frontend (React/Next.js)", value: 85 },
-          { label: "Backend (Node/FastAPI)", value: 80 },
-          { label: "Databases (Postgres/Mongo)", value: 78 },
-          { label: "DevOps (Docker/CI/CD/AWS)", value: 75 },
-          { label: "Algorithms/Data Structures", value: 70 },
-          { label: "ML/NLP Basics", value: 65 },
-        ],
-        highlights: [
-          "Consistent commit activity over the past 12 months",
-          "Good test coverage in key repos (Jest/PyTest)",
-          "Reusable CI workflows and deployment automation",
-          "Clear README and documentation in major projects",
-        ],
-        recommendations: [
-          "Add badges (build, coverage) to main README",
-          "Increase unit/integration test coverage in backend services",
-          "Consolidate environment configs and secrets via best practices",
-          "Add more issues and project boards for collaboration tracking",
-        ]
+    try {
+      const response = await api.github.analyze(username.trim())
+      setResult(response.data)
+    } catch (err: any) {
+      console.error("GitHub analysis error:", err)
+      if (err.response?.status === 404) {
+        setError("GitHub user not found. Please check the username and try again.")
+      } else if (err.response?.status === 403) {
+        setError("GitHub API rate limit exceeded. Please try again later.")
+      } else if (err.response?.status === 500) {
+        setError("GitHub API is not configured. Please contact administrator.")
+      } else {
+        setError("Failed to analyze GitHub profile. Please try again.")
       }
-
-      setResult(data)
+    } finally {
       setIsAnalyzing(false)
-    }, 1000)
+    }
   }
 
   return (
@@ -224,7 +159,11 @@ export default function GithubAnalyzerPage() {
                         <div className="h-72 text-slate-400 dark:text-slate-600">
                           <ResponsiveContainer width="100%" height="100%">
                             <RadarChart
-                              data={result.skillGraph.map((s: { label: string; value: number }) => ({ subject: s.label, value: s.value, fullMark: 100 }))}
+                              data={Object.entries(result.metrics.languages).map(([lang, count]) => ({ 
+                                subject: lang, 
+                                value: Math.min(100, (count as number) * 10), 
+                                fullMark: 100 
+                              }))}
                               cx="50%"
                               cy="50%"
                               outerRadius="80%"
@@ -239,16 +178,16 @@ export default function GithubAnalyzerPage() {
                               <PolarGrid stroke="currentColor" strokeOpacity={0.35} />
                               <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11 }} tickLine={false} />
                               <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                              <Radar name="Skills" dataKey="value" stroke="#7c3aed" strokeWidth={2} fill="url(#radarGradient)" fillOpacity={1} isAnimationActive animationBegin={200} animationDuration={1200} />
+                              <Radar name="Languages" dataKey="value" stroke="#7c3aed" strokeWidth={2} fill="url(#radarGradient)" fillOpacity={1} isAnimationActive animationBegin={200} animationDuration={1200} />
                               <Tooltip formatter={(val: number, _name: string, props: any) => [`${val}%`, props.payload.subject]} contentStyle={{ backgroundColor: "#0f172a", color: "#fff", border: "1px solid #334155", borderRadius: 8, padding: "8px 10px" }} />
                             </RadarChart>
                           </ResponsiveContainer>
                         </div>
                         <div className="space-y-3">
-                          {result.skillGraph.map((s: { label: string; value: number }, idx: number) => (
+                          {Object.entries(result.metrics.languages).map(([lang, count], idx) => (
                             <div key={idx} className="flex items-center justify-between">
-                              <span className="text-sm text-gray-700 dark:text-gray-300">{s.label}</span>
-                              <Badge variant="secondary" className="text-xs">{s.value}%</Badge>
+                              <span className="text-sm text-gray-700 dark:text-gray-300">{lang}</span>
+                              <Badge variant="secondary" className="text-xs">{count} repos</Badge>
                             </div>
                           ))}
                         </div>
@@ -256,34 +195,52 @@ export default function GithubAnalyzerPage() {
                     </CardContent>
                   </Card>
 
-                  {/* Highlights and Recommendations */}
+                  {/* Activity Metrics */}
                   <Card>
                     <CardHeader>
-                      <CardTitle>Highlights</CardTitle>
-                      <CardDescription>Key strengths observed</CardDescription>
+                      <CardTitle>Activity Metrics</CardTitle>
+                      <CardDescription>Recent development activity</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <ul className="list-disc pl-5 space-y-2 text-sm">
-                        {result.highlights.map((h: string, idx: number) => (
-                          <li key={idx} className="text-gray-700 dark:text-gray-300">{h}</li>
-                        ))}
-                      </ul>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-gray-900 dark:text-white">{result.metrics.recent_commits}</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Recent Commits</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-gray-900 dark:text-white">{result.metrics.recent_repos}</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Active Repos</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-gray-900 dark:text-white">{result.metrics.total_stars}</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Total Stars</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-2xl font-bold text-gray-900 dark:text-white">{result.metrics.total_forks}</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">Total Forks</p>
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
 
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Recommendations</CardTitle>
-                      <CardDescription>Actionable improvements</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <ul className="list-disc pl-5 space-y-2 text-sm">
-                        {result.recommendations.map((r: string, idx: number) => (
-                          <li key={idx} className="text-gray-700 dark:text-gray-300">{r}</li>
-                        ))}
-                      </ul>
-                    </CardContent>
-                  </Card>
+                  {/* Skills */}
+                  {result.skills && result.skills.length > 0 && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Detected Skills</CardTitle>
+                        <CardDescription>Skills inferred from repositories</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex flex-wrap gap-2">
+                          {result.skills.map((skill: any, idx: number) => (
+                            <Badge key={idx} variant="outline" className="text-xs">
+                              {skill.skill}
+                            </Badge>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
               )}
 

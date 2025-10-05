@@ -2,14 +2,12 @@
 AI Agents for Placement Navigator MCP Server
 """
 
-from .job_matcher import JobMatcherAgent
-from .resume_generator import ResumeGeneratorAgent
-from .skill_analyzer import SkillAnalyzerAgent
-from .analytics_agent import AnalyticsAgent
+from .simple_matching_agent import SimpleMatchingAgent
+from .resume_agent import ResumeAgent
+from .tracker_agent import TrackerAgent
 
 __all__ = [
-    "JobMatcherAgent",
-    "ResumeGeneratorAgent", 
-    "SkillAnalyzerAgent",
-    "AnalyticsAgent"
+    "SimpleMatchingAgent",
+    "ResumeAgent", 
+    "TrackerAgent"
 ]

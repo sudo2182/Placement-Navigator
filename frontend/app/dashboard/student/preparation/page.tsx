@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import AppLayout from "@/components/AppLayout"
+import { api } from "@/lib/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -200,12 +201,12 @@ function ResourceCard({ resource }: { resource: any }) {
       <CardContent className="p-6">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${getTypeColor(resource.type)}`}>
-              {getTypeIcon(resource.type)}
+            <div className={`p-2 rounded-lg ${getTypeColor(resource.resource_type || resource.type)}`}>
+              {getTypeIcon(resource.resource_type || resource.type)}
             </div>
             <div>
               <Badge variant="outline" className="mb-2 capitalize">
-                {resource.type}
+                {resource.resource_type || resource.type}
               </Badge>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                 {resource.title}
@@ -457,11 +458,34 @@ function CrashCourseList({ courses }: { courses: any[] }) {
 export default function PreparationReferencePage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [activeTab, setActiveTab] = useState("resources")
+  const [resources, setResources] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  const filteredResources = resourcesData.filter((resource) =>
+  // Load resources from API
+  useEffect(() => {
+    const loadResources = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+        const resourcesData = await api.resources.list()
+        setResources(resourcesData)
+      } catch (err) {
+        console.error('Failed to load resources:', err)
+        setError('Failed to load resources')
+        // Fallback to empty array
+        setResources([])
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    loadResources()
+  }, [])
+
+  const filteredResources = resources.filter((resource) =>
     resource.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    resource.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    resource.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+    (resource.description && resource.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (resource.tags && resource.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())))
   )
 
   const filteredCourses = crashCoursesData.filter((course) =>
@@ -522,7 +546,7 @@ export default function PreparationReferencePage() {
             <Card>
               <CardContent className="p-4 text-center">
                 <BookOpen className="w-8 h-8 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{resourcesData.length}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{resources.length}</p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Resources</p>
               </CardContent>
             </Card>
@@ -572,7 +596,34 @@ export default function PreparationReferencePage() {
                 </h2>
               </div>
               
-              {filteredResources.length === 0 ? (
+              {isLoading ? (
+                <Card className="p-12 text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    Loading resources...
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Please wait while we fetch the latest resources
+                  </p>
+                </Card>
+              ) : error ? (
+                <Card className="p-12 text-center">
+                  <div className="w-16 h-16 text-red-400 mx-auto mb-4 flex items-center justify-center">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    Error loading resources
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">
+                    {error}
+                  </p>
+                  <Button onClick={() => window.location.reload()}>
+                    Try Again
+                  </Button>
+                </Card>
+              ) : filteredResources.length === 0 ? (
                 <Card className="p-12 text-center">
                   <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">

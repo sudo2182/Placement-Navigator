@@ -5,7 +5,7 @@ from datetime import datetime
 import sys
 import os
 sys.path.append('../')
-from shared.enhanced_models import get_db, FacultyResource, User
+from shared.models import get_db, FacultyResource, User
 from backend.auth import get_current_user, require_role
 from pydantic import BaseModel
 
@@ -23,11 +23,11 @@ class ResourceResponse(BaseModel):
     id: int
     faculty_id: int
     title: str
-    description: str
+    description: Optional[str] = None
     resource_type: str
-    file_path: str = None
-    external_url: str = None
-    tags: List[str]
+    file_path: Optional[str] = None
+    external_url: Optional[str] = None
+    tags: List[str] = []
     is_public: bool
     created_at: datetime
     

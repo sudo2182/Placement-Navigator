@@ -99,4 +99,8 @@ export const api = {
     delete: (id: number) => apiClient.delete(`/notifications/${id}`),
     getUnreadCount: () => apiClient.get('/notifications/stats/unread'),
   },
+  github: {
+    analyze: (username: string) => apiClient.get(`/github/analyze/${username}`),
+    health: () => apiClient.get('/github/health'),
+  },
 };

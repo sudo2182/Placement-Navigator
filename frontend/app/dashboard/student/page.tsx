@@ -57,33 +57,44 @@ function getNotificationStyle(type: string) {
   }
 }
 
-// Real data from API (now hardcoded realistic data)
+// Real data from API
 const useStudentData = () => {
   const { user } = useAuthStore()
+  const [jobs, setJobs] = useState([])
+  const [bulletins, setBulletins] = useState([])
+  const [notifications, setNotifications] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState(null)
 
-  const staticJobs = [
-    { id: 301, title: "Software Engineer", company: "Microsoft", location: "Bangalore", type: "Full-time", salary: "₹28-32 LPA", postedAt: new Date().toISOString() },
-    { id: 302, title: "SDE Intern", company: "Google", location: "Hyderabad", type: "Internship", salary: "₹1.2 L/month", postedAt: new Date(Date.now() - 3 * 86400000).toISOString() },
-    { id: 303, title: "Backend Engineer", company: "Flipkart", location: "Bangalore", type: "Full-time", salary: "₹24-28 LPA", postedAt: new Date(Date.now() - 5 * 86400000).toISOString() },
-  ]
+  // Fetch data from API
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+        
+        const [jobsRes, bulletinsRes, notificationsRes] = await Promise.all([
+          api.jobs.list(),
+          api.bulletin.list(),
+          api.notifications.list()
+        ])
+        
+        setJobs(jobsRes.data || [])
+        setBulletins(bulletinsRes.data || [])
+        setNotifications(notificationsRes.data || [])
+      } catch (err) {
+        console.error('Error fetching data:', err)
+        setError(err.message || 'Failed to fetch data')
+      } finally {
+        setIsLoading(false)
+      }
+    }
 
-  const staticBulletins = [
-    { id: 101, post_type: "job_opening", title: "Software Engineer - Microsoft (Bangalore)", posted_by: "TPO Office", is_active: true, created_at: new Date().toISOString() },
-    { id: 102, post_type: "internship", title: "Data Science Intern - Fractal Analytics", posted_by: "TPO Office", is_active: true, created_at: new Date(Date.now() - 86400000).toISOString() },
-    { id: 103, post_type: "workshop", title: "Resume Masterclass with Alumni", posted_by: "Career Cell", is_active: true, created_at: new Date(Date.now() - 2 * 86400000).toISOString() },
-    { id: 104, post_type: "event", title: "Company Talk: Amazon SDE Hiring", posted_by: "TPO Office", is_active: true, created_at: new Date(Date.now() - 5 * 86400000).toISOString() },
-  ]
-
-  const staticNotifications = [
-    { id: 501, title: "Application submitted to Microsoft", type: "success", created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() },
-    { id: 502, title: "Interview scheduled with Google (Round 1)", type: "info", created_at: new Date(Date.now() - 26 * 60 * 60 * 1000).toISOString() },
-    { id: 503, title: "Resume update recommended: Add Rust projects", type: "warning", created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() },
-    { id: 504, title: "New job match: Backend Engineer at Flipkart", type: "success", created_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString() },
-    { id: 505, title: "Profile 92% complete — add certifications to reach 100%", type: "info", created_at: new Date(Date.now() - 7 * 60 * 60 * 1000).toISOString() },
-  ]
+    fetchData()
+  }, [])
 
   const [studentData, setStudentData] = useState({
-    name: "Aditya Ray",
+    name: user?.name || "Student",
     sapid: user?.id?.toString() || "N/A",
     course: user?.profile_data?.major || "Computer Science",
     year: user?.profile_data?.graduation_year?.toString() || "Final Year",
@@ -93,17 +104,8 @@ const useStudentData = () => {
     interviewsScheduled: 3,
     offersReceived: 1,
   })
-  const [jobs] = useState(staticJobs)
-  const [bulletins] = useState<any[]>(staticBulletins)
-  const [notifications] = useState<any[]>(staticNotifications)
-  const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 600)
-    return () => clearTimeout(timer)
-  }, [])
-
-  return { studentData, jobs, bulletins, notifications, loading }
+  return { studentData, jobs, bulletins, notifications, loading: isLoading, error }
 }
 
 const bulletinData = [
@@ -415,7 +417,7 @@ function QuickStats({ studentData }: { studentData: any }) {
 }
 
 export default function StudentDashboard() {
-  const { studentData, jobs, bulletins, notifications, loading } = useStudentData()
+  const { studentData, jobs, bulletins, notifications, loading, error } = useStudentData()
   const { user } = useAuthStore()
   
   // Redirect to login if not authenticated
@@ -432,6 +434,24 @@ export default function StudentDashboard() {
           >
             Go to Login
           </a>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-red-600 dark:text-red-400 mb-2">Error Loading Data</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
+          <Button 
+            onClick={() => window.location.reload()} 
+            className="bg-red-600 hover:bg-red-700"
+          >
+            Retry
+          </Button>
         </div>
       </div>
     )
