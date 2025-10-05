@@ -3,3 +3,6 @@ __pycache__/
 # .env  # Commented out to allow API keys to be pushed
 *.dbvenv/
 */venv/
+# Added to prevent indexing timeouts and heavy binaries
+backend/venv_new/
+landing-page/.next/

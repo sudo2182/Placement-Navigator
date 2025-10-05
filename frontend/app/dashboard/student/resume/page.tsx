@@ -36,17 +36,17 @@ import Link from "next/link"
 // Mock data structure
 const initialData = {
   personal: {
-    firstName: "Darsh",
-    lastName: "Iyer",
-    email: "darsh.iyer@example.com",
+    firstName: "Aditya",
+    lastName: "Ray",
+    email: "adityaray@gmail.com",
     phone: "+91 9876543210",
     address: "Mumbai, Maharashtra",
     dateOfBirth: "2002-05-15",
     gender: "Male",
     nationality: "Indian",
-    linkedin: "https://linkedin.com/in/darshiyer",
-    github: "https://github.com/darshiyer",
-    portfolio: "https://darshiyer.dev"
+    linkedin: "https://linkedin.com/in/adityaray",
+    github: "https://github.com/adityaray",
+    portfolio: "https://adityaray.dev"
   },
   academic: {
     sapid: "60004210001",
@@ -76,11 +76,11 @@ const initialData = {
   projects: [
     {
       id: 1,
-      title: "Placement Navigator",
+      title: "Campus Connect",
       technologies: "Next.js, TypeScript, Tailwind CSS",
       duration: "Jan 2024 - Present",
       description: "A comprehensive placement management system for colleges",
-      github: "https://github.com/darshiyer/placement-navigator"
+      github: "https://github.com/darshiyer/campus-connect"
     }
   ],
   skills: {
@@ -532,7 +532,7 @@ function ProjectsTab({ data, onChange }: any) {
                     <Input
                       value={project.title}
                       onChange={(e) => updateProject(project.id, 'title', e.target.value)}
-                      placeholder="e.g., Placement Navigator"
+                      placeholder="e.g., Campus Connect"
                     />
                   </div>
                   <div className="space-y-2">

@@ -1,9 +1,9 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 
 class UserBase(BaseModel):
-    email: EmailStr
+    email: str
     role: str
 
 class UserCreate(UserBase):
@@ -11,7 +11,7 @@ class UserCreate(UserBase):
     profile_data: Dict[str, Any] = {}
 
 class UserLogin(BaseModel):
-    email: EmailStr
+    email: str
     password: str
 
 class UserResponse(UserBase):

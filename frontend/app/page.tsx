@@ -25,7 +25,7 @@ import {
 } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 
-export default function PlacementNavigatorLanding() {
+export default function CampusConnectLanding() {
   const [isDarkMode, setIsDarkMode] = useState(true)
   const [scrollY, setScrollY] = useState(0)
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
@@ -253,10 +253,10 @@ export default function PlacementNavigatorLanding() {
 
             <h1 className="text-[4rem] md:text-[6rem] lg:text-[8rem] font-bold leading-none tracking-tighter mb-8 md:mb-12 group cursor-default">
               <span className="block text-gray-900 dark:text-white group-hover:tracking-wide transition-all duration-500">
-                placement
+                Campus
               </span>
               <span className="block bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-600 dark:from-purple-400 dark:via-pink-400 dark:to-cyan-400 bg-clip-text text-transparent group-hover:tracking-wide transition-all duration-500">
-                navigator
+                Connect
               </span>
             </h1>
 
@@ -553,22 +553,22 @@ export default function PlacementNavigatorLanding() {
               id="cta-heading"
               className="text-5xl md:text-7xl lg:text-8xl font-bold mb-12 md:mb-16 leading-tight text-gray-900 dark:text-white"
             >
-              Time to{" "}
+              Ready to{" "}
               <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-600 dark:from-purple-400 dark:via-pink-400 dark:to-cyan-400 bg-clip-text text-transparent">
-                Play
+                Accelerate Placements
               </span>
               ?
             </h2>
             <p className="text-xl md:text-2xl lg:text-3xl text-gray-700 dark:text-white/70 mb-16 md:mb-20 leading-relaxed">
-              Your content deserves better than that sad folder it's rotting in. Let's fix that.
+              Connect students, faculty, and TPO. Publish resources, schedule courses, and manage registered students — all in one platform.
             </p>
 
             <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 via-pink-600 to-cyan-600 dark:from-purple-500 dark:via-pink-500 dark:to-cyan-500 p-[1px] rounded-full group hover:scale-105 transition-all duration-300 hover:shadow-xl">
               <Button
                 className="rounded-full bg-white dark:bg-black text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-black/90 px-8 md:px-12 py-6 md:py-8 text-lg md:text-2xl group"
-                onClick={() => window.open("https://www.lunch-box.co/new", "_blank")}
+                onClick={() => window.open("/login", "_self")}
               >
-                Make Something Cool
+                Get Started
                 <ArrowRight className="ml-2 md:ml-3 h-5 w-5 md:h-6 md:w-6 group-hover:translate-x-1 transition-transform duration-300" />
               </Button>
             </div>

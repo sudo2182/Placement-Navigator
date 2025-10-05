@@ -23,10 +23,11 @@ import {
   Award,
   Building2,
   Moon,
-  Sun
+  Sun,
+  Github
 } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 
 interface User {
   id: string
@@ -50,6 +51,9 @@ const navigationItems = {
     { href: "/dashboard/student", label: "Dashboard", icon: Home },
     { href: "/dashboard/student/opt-out", label: "Opt Out Form", icon: FileText },
     { href: "/dashboard/student/resume", label: "Resume Data", icon: User },
+    { href: "/dashboard/student/ats-scanner", label: "ATS Scanner", icon: Target },
+    { href: "/dashboard/student/github-analyzer", label: "GitHub Analyzer", icon: Github },
+    { href: "/dashboard/student/job-fit", label: "Job Fit Analyzer", icon: BarChart3 },
     { href: "/dashboard/student/jobs", label: "Job Postings", icon: Briefcase },
     { href: "/dashboard/student/preparation", label: "Preparation", icon: BookOpen },
   ],
@@ -72,15 +76,16 @@ export default function AppLayout({ children, user }: AppLayoutProps) {
   const [isDarkMode, setIsDarkMode] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const router = useRouter()
+  const pathname = usePathname()
 
   // Mock user data if not provided
   const currentUser: User = user || {
     id: "1",
-    name: "John Doe",
-    email: "student@example.com",
+    name: "Aditya Ray",
+    email: "adityaray@gmail.com",
     role: "student",
     sapid: "60004210001",
-    course: "Computer Engineering",
+    course: "Computer Science",
     year: "Final Year"
   }
 
@@ -126,24 +131,24 @@ export default function AppLayout({ children, user }: AppLayoutProps) {
   const currentNavItems = navigationItems[currentUser.role] || []
 
   const Sidebar = ({ isMobile = false }) => (
-    <div className={`${isMobile ? "w-full" : "w-64 lg:w-72"} h-full bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 flex flex-col`}>
+    <div className={`${isMobile ? "w-full" : "w-64 lg:w-72"} h-full bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 flex flex-col`}> 
       {/* Logo and branding */}
-      <div className={`${isMobile ? "p-4" : "p-4 lg:p-6"} border-b border-gray-200 dark:border-slate-700`}>
+      <div className={`${isMobile ? "p-4" : "p-4 lg:p-6"} border-b border-gray-200 dark:border-slate-700`}> 
         <Link href="/" className="flex items-center gap-3">
           <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-xl bg-gradient-to-r from-purple-500/10 to-pink-500/10 dark:from-purple-500/20 dark:to-pink-500/20 backdrop-blur-sm border border-gray-200 dark:border-white/10 flex items-center justify-center">
             <Target className="w-4 h-4 lg:w-6 lg:h-6 text-purple-600 dark:text-purple-400" />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="text-base lg:text-lg font-bold text-gray-900 dark:text-white truncate">Placement Navigator</h2>
+            <h2 className="text-base lg:text-lg font-bold text-gray-900 dark:text-white truncate">Campus Connect</h2>
             <p className="text-xs text-gray-500 dark:text-gray-400 truncate">Career Management</p>
           </div>
         </Link>
       </div>
 
       {/* User info */}
-      <div className={`${isMobile ? "p-4" : "p-4 lg:p-6"} border-b border-gray-200 dark:border-slate-700`}>
+      <div className={`${isMobile ? "p-4" : "p-4 lg:p-6"} border-b border-gray-200 dark:border-slate-700`}> 
         <div className="flex items-center gap-3">
-          <Avatar className="w-10 h-10 lg:w-12 lg:h-12 flex-shrink-0">
+          <Avatar className="w-10 h-10 lg:w-12 lg:h-12 flex-shrink-0 ring-2 ring-purple-500/30">
             <AvatarImage src={currentUser.avatar} />
             <AvatarFallback className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm lg:text-base">
               {currentUser.name.split(" ").map(n => n[0]).join("")}
@@ -190,14 +195,20 @@ export default function AppLayout({ children, user }: AppLayoutProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-3 lg:p-4 space-y-1 lg:space-y-2 overflow-y-auto">
+      <nav className="flex-1 p-3 lg:p-4 space-y-1 lg:space-y-2 overflow-y-auto"> 
         {currentNavItems.map((item) => {
           const Icon = item.icon
+          const isActive = pathname === item.href || pathname?.startsWith(item.href + "/")
           return (
             <Link
               key={item.href}
               href={item.href}
-              className="flex items-center gap-2 lg:gap-3 px-2 lg:px-3 py-2 lg:py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white transition-colors"
+              aria-current={isActive ? "page" : undefined}
+              className={`flex items-center gap-2 lg:gap-3 px-2 lg:px-3 py-2 lg:py-2.5 text-sm font-medium rounded-lg transition-all ${
+                isActive 
+                  ? "bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 text-gray-900 dark:text-white border border-purple-200 dark:border-purple-800" 
+                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white"
+              }`}
               onClick={() => isMobile && setIsMobileMenuOpen(false)}
             >
               <Icon className="w-4 h-4 lg:w-5 lg:h-5 flex-shrink-0" />
@@ -208,7 +219,7 @@ export default function AppLayout({ children, user }: AppLayoutProps) {
       </nav>
 
       {/* Settings and logout */}
-      <div className="p-3 lg:p-4 border-t border-gray-200 dark:border-slate-700 space-y-1 lg:space-y-2">
+      <div className="p-3 lg:p-4 border-t border-gray-200 dark:border-slate-700 space-y-1 lg:space-y-2"> 
         <Button
           variant="ghost"
           size="sm"
@@ -232,7 +243,7 @@ export default function AppLayout({ children, user }: AppLayoutProps) {
   )
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex"> 
       {/* Desktop Sidebar */}
       <div className="hidden lg:block flex-shrink-0">
         <Sidebar />
@@ -246,7 +257,7 @@ export default function AppLayout({ children, user }: AppLayoutProps) {
       </Sheet>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0"> 
         {/* Mobile Header */}
         <header className="lg:hidden bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 p-3 sm:p-4">
           <div className="flex items-center justify-between">
@@ -260,7 +271,7 @@ export default function AppLayout({ children, user }: AppLayoutProps) {
             
             <Link href="/" className="flex items-center gap-2 min-w-0 flex-1 justify-center">
               <Target className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 dark:text-purple-400 flex-shrink-0" />
-              <span className="font-bold text-gray-900 dark:text-white text-sm sm:text-base truncate">Placement Navigator</span>
+              <span className="font-bold text-gray-900 dark:text-white text-sm sm:text-base truncate">Campus Connect</span>
             </Link>
 
             <DropdownMenu>
@@ -295,9 +306,11 @@ export default function AppLayout({ children, user }: AppLayoutProps) {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-auto"> 
           <div className="h-full">
-            {children}
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+              {children}
+            </div>
           </div>
         </main>
       </div>
