@@ -7,7 +7,18 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
+import { Textarea } from "@/components/ui/textarea"
+import { api } from "@/lib/api"
 import { Upload, FileText, CheckCircle, AlertCircle, Info, User as UserIcon, Mail, Phone, MapPin, GraduationCap, Briefcase, Award, ClipboardList, Tag } from "lucide-react"
+
+interface ScanResult {
+  overall_score: number
+  breakdown: Record<string, number>
+  matched_keywords: string[]
+  missing_required: string[]
+  missing_preferred: string[]
+  suggestions: string[]
+}
 
 export default function ATSScannerPage() {
   const mockUser = {
@@ -22,8 +33,11 @@ export default function ATSScannerPage() {
 
   const [file, setFile] = useState<File | null>(null)
   const [fileName, setFileName] = useState<string>("")
+  const [jobDescription, setJobDescription] = useState<string>("")
+  const [resumeText, setResumeText] = useState<string>("")
+  const [useTextMode, setUseTextMode] = useState<boolean>(false)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
-  const [result, setResult] = useState<any | null>(null)
+  const [result, setResult] = useState<ScanResult | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -35,85 +49,40 @@ export default function ATSScannerPage() {
   }
 
   const handleAnalyze = async () => {
-    // Analysis will run regardless of whether a file is selected, per requirement to hardcode output
     setIsAnalyzing(true)
     setError(null)
+    setResult(null)
 
-    setTimeout(() => {
-      const mockScore = 85
-      setResult({
-        score: mockScore,
-        summary: "Resume is ATS-friendly with clear sectioning, relevant keywords, and consistent formatting. Strong technical stack and projects aligned to target roles.",
-        recommendations: [
-          "Tailor summary to the specific job description for stronger keyword match",
-          "Add 1–2 quantified outcomes to each experience (e.g., performance improvements, cost savings)",
-          "Ensure consistent tense in bullet points (past for completed roles, present for ongoing)",
-          "Keep file name professional: darsh_iyer_resume.pdf",
-        ],
-        improvements: [
-          "Use action verbs at the start of bullet points (Led, Built, Optimized, Implemented)",
-          "Group skills into categories (Frontend, Backend, DevOps, Data) for readability",
-          "Add links to GitHub and portfolio where relevant (e.g., project repositories)",
-          "Limit sections to concise bullet points to avoid dense paragraphs",
-        ],
-        extracted: {
-          name: "Darsh Iyer",
-          email: "darsh.iyer@example.com",
-          phone: "+91 98765 43210",
-          location: "Mumbai, India",
-          headline: "Computer Engineering student specializing in full‑stack development and data‑driven systems.",
-          skills: [
-            "JavaScript", "TypeScript", "React", "Next.js", "Node.js", "Express",
-            "Python", "FastAPI", "PostgreSQL", "MongoDB", "AWS", "Docker",
-            "CI/CD", "Tailwind CSS"
-          ],
-          education: {
-            degree: "B.E. Computer Engineering",
-            college: "Dwarkadas J. Sanghvi College of Engineering",
-            years: "2021–2025"
-          },
-          experience: [
-            {
-              company: "TechStartup Inc.",
-              role: "Software Engineering Intern",
-              period: "May 2024 – Aug 2024",
-              highlights: [
-                "Built REST APIs with Node.js and Express for core features",
-                "Implemented CI/CD pipeline reducing deployment time by 40%",
-                "Collaborated with cross-functional team to ship two product releases"
-              ]
-            },
-            {
-              company: "University Capstone",
-              role: "Project Lead",
-              period: "Jan 2024 – May 2024",
-              highlights: [
-                "Led a team of 4 to design scalable microservices architecture",
-                "Optimized database queries improving response time by 30%",
-                "Deployed services to AWS with Docker and GitHub Actions"
-              ]
-            }
-          ],
-          projects: [
-            {
-              title: "Campus Connect",
-              description: "End-to-end placement workflow platform with dashboards for students, faculty, and TPO.",
-              stack: ["Next.js", "Node.js", "PostgreSQL", "Tailwind CSS"]
-            },
-            {
-              title: "AI Resume Maker",
-              description: "Generates tailored resumes using LLMs and job description parsing.",
-              stack: ["Python", "FastAPI", "MongoDB", "Docker"]
-            }
-          ],
-          certifications: [
-            "AWS Cloud Practitioner (2023)",
-            "Meta Front‑End Developer (2024)"
-          ]
+    try {
+      if (!jobDescription.trim()) {
+        throw new Error("Please paste the Job Description to analyze against.")
+      }
+
+      if (useTextMode) {
+        if (!resumeText.trim()) {
+          throw new Error("Please paste your resume text or switch to file upload.")
         }
-      })
+        const { data } = await api.ats.scan({
+          resume_text: resumeText,
+          job_description: jobDescription,
+        })
+        setResult(data as ScanResult)
+      } else {
+        if (!file) {
+          throw new Error("Please upload a resume file or switch to text mode.")
+        }
+        const formData = new FormData()
+        formData.append("job_description", jobDescription)
+        formData.append("resume_file", file, file.name)
+        const { data } = await api.ats.scanUpload(formData)
+        setResult(data as ScanResult)
+      }
+    } catch (err: any) {
+      const message = err?.response?.data?.detail || err?.message || "Analysis failed"
+      setError(message)
+    } finally {
       setIsAnalyzing(false)
-    }, 1000)
+    }
   }
 
   return (
@@ -124,20 +93,56 @@ export default function ATSScannerPage() {
             <Upload className="w-5 h-5 text-amber-600 dark:text-amber-400" />
             <h1 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">ATS Scanner</h1>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">Upload your resume to get a quick ATS compatibility score and recommendations.</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">Upload your resume or paste text to get an ATS compatibility score and suggestions based on a Job Description.</p>
 
           <Card>
             <CardHeader>
-              <CardTitle>Upload Resume</CardTitle>
-              <CardDescription>Supported formats: PDF, DOCX. Max size: 5 MB.</CardDescription>
+              <CardTitle>Job Description</CardTitle>
+              <CardDescription>Paste the JD for the role you’re targeting</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Textarea
+                value={jobDescription}
+                onChange={(e) => setJobDescription(e.target.value)}
+                placeholder="Paste the job description here..."
+                className="min-h-[140px]"
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Resume Input</CardTitle>
+                  <CardDescription>Supported formats: PDF, DOCX. Or paste plain text.</CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant={useTextMode ? "secondary" : "outline"}
+                    onClick={() => setUseTextMode(!useTextMode)}
+                  >
+                    {useTextMode ? "Switch to File Upload" : "Switch to Text Mode"}
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                <Input type="file" accept=".pdf,.doc,.docx" onChange={handleFileChange} className="max-w-sm"/>
-                {fileName && (
-                  <Badge variant="secondary" className="truncate max-w-[240px]">{fileName}</Badge>
-                )}
-              </div>
+              {useTextMode ? (
+                <Textarea
+                  value={resumeText}
+                  onChange={(e) => setResumeText(e.target.value)}
+                  placeholder="Paste your resume text here..."
+                  className="min-h-[160px]"
+                />
+              ) : (
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                  <Input type="file" accept=".pdf,.doc,.docx,.txt" onChange={handleFileChange} className="max-w-sm"/>
+                  {fileName && (
+                    <Badge variant="secondary" className="truncate max-w-[240px]">{fileName}</Badge>
+                  )}
+                </div>
+              )}
 
               <div className="flex items-center gap-3">
                 <Button onClick={handleAnalyze} disabled={isAnalyzing} className="gap-2">
@@ -166,141 +171,93 @@ export default function ATSScannerPage() {
                       <div className="flex items-center gap-3">
                         <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
                         <div>
-                          <p className="text-xl font-bold text-gray-900 dark:text-white">ATS Score: {result.score}/100</p>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">{result.summary}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Recommendations</CardTitle>
-                      <CardDescription>Actionable suggestions to improve your resume</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <ul className="list-disc pl-5 space-y-2 text-sm">
-                        {result.recommendations.map((rec: string, idx: number) => (
-                          <li key={idx} className="text-gray-700 dark:text-gray-300">{rec}</li>
-                        ))}
-                      </ul>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Improvements</CardTitle>
-                      <CardDescription>Top areas to refine for ATS and recruiter readability</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <ul className="list-disc pl-5 space-y-2 text-sm">
-                        {result.improvements.map((imp: string, idx: number) => (
-                          <li key={idx} className="text-gray-700 dark:text-gray-300">{imp}</li>
-                        ))}
-                      </ul>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Extracted Resume Data</CardTitle>
-                      <CardDescription>Detected details for review and refinement</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {/* Personal Info */}
-                      <div className="grid sm:grid-cols-2 gap-4">
-                        <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                          <UserIcon className="w-4 h-4" />
-                          <span className="font-medium">{result.extracted.name}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                          <Mail className="w-4 h-4" />
-                          <span>{result.extracted.email}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                          <Phone className="w-4 h-4" />
-                          <span>{result.extracted.phone}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                          <MapPin className="w-4 h-4" />
-                          <span>{result.extracted.location}</span>
-                        </div>
-                      </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{result.extracted.headline}</p>
-
-                      {/* Skills */}
-                      <div className="space-y-2">
-                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Skills</h3>
-                        <div className="flex flex-wrap gap-2">
-                          {result.extracted.skills.map((skill: string, idx: number) => (
-                            <Badge key={idx} variant="secondary" className="px-2 py-0.5 text-xs">{skill}</Badge>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Education */}
-                      <div className="space-y-2">
-                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2"><GraduationCap className="w-4 h-4" /> Education</h3>
-                        <div className="text-sm text-gray-700 dark:text-gray-300">
-                          <p className="font-medium">{result.extracted.education.degree}</p>
-                          <p>{result.extracted.education.college} • {result.extracted.education.years}</p>
-                        </div>
-                      </div>
-
-                      {/* Experience */}
-                      <div className="space-y-2">
-                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2"><Briefcase className="w-4 h-4" /> Experience</h3>
-                        <div className="space-y-3">
-                          {result.extracted.experience.map((exp: { company: string; role: string; period: string; highlights: string[] }, idx: number) => (
-                            <div key={idx} className="text-sm text-gray-700 dark:text-gray-300">
-                              <p className="font-medium">{exp.role} • {exp.company}</p>
-                              <p className="text-gray-600 dark:text-gray-400">{exp.period}</p>
-                              <ul className="list-disc pl-5 mt-1 space-y-1">
-                                {exp.highlights.map((h: string, i: number) => (
-                                  <li key={i}>{h}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Projects */}
-                      <div className="space-y-2">
-                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2"><ClipboardList className="w-4 h-4" /> Projects</h3>
-                        <div className="space-y-3">
-                          {result.extracted.projects.map((proj: { title: string; description: string; stack: string[] }, idx: number) => (
-                            <div key={idx} className="text-sm text-gray-700 dark:text-gray-300">
-                              <p className="font-medium">{proj.title}</p>
-                              <p className="text-gray-600 dark:text-gray-400">{proj.description}</p>
-                              <div className="flex flex-wrap gap-2 mt-1">
-                                {proj.stack.map((t: string, i: number) => (
-                                  <Badge key={i} variant="outline" className="px-2 py-0.5 text-xs flex items-center gap-1"><Tag className="w-3 h-3" /> {t}</Badge>
-                                ))}
+                          <p className="text-xl font-bold text-gray-900 dark:text-white">ATS Score: {result.overall_score}/100</p>
+                          <div className="grid sm:grid-cols-2 gap-3 mt-2">
+                            {Object.entries(result.breakdown).map(([k, v]) => (
+                              <div key={k} className="flex items-center justify-between text-sm">
+                                <span className="text-gray-700 dark:text-gray-300 capitalize">{k.replace('_', ' ')}</span>
+                                <Badge variant="secondary">{v}%</Badge>
                               </div>
-                            </div>
-                          ))}
+                            ))}
+                          </div>
                         </div>
                       </div>
+                    </CardContent>
+                  </Card>
 
-                      {/* Certifications */}
-                      <div className="space-y-2">
-                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2"><Award className="w-4 h-4" /> Certifications</h3>
-                        <ul className="list-disc pl-5 space-y-1 text-sm text-gray-700 dark:text-gray-300">
-                          {result.extracted.certifications.map((cert: string, idx: number) => (
-                            <li key={idx}>{cert}</li>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Matched Keywords</CardTitle>
+                      <CardDescription>Detected matches between your resume and JD</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {result.matched_keywords.length ? (
+                        <div className="flex flex-wrap gap-2">
+                          {result.matched_keywords.map((kw, idx) => (
+                            <Badge key={idx} variant="secondary" className="px-2 py-0.5 text-xs">{kw}</Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-600 dark:text-gray-400">No direct keyword matches found.</p>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Missing Required</CardTitle>
+                        <CardDescription>Consider adding or emphasizing these</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {result.missing_required.length ? (
+                          <ul className="list-disc pl-5 space-y-1 text-sm">
+                            {result.missing_required.map((kw, idx) => (
+                              <li key={idx} className="text-gray-700 dark:text-gray-300">{kw}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-sm text-gray-600 dark:text-gray-400">All required keywords are covered.</p>
+                        )}
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Missing Preferred</CardTitle>
+                        <CardDescription>Nice-to-have keywords to boost ATS score</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        {result.missing_preferred.length ? (
+                          <ul className="list-disc pl-5 space-y-1 text-sm">
+                            {result.missing_preferred.map((kw, idx) => (
+                              <li key={idx} className="text-gray-700 dark:text-gray-300">{kw}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-sm text-gray-600 dark:text-gray-400">No preferred keywords missing.</p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Suggestions</CardTitle>
+                      <CardDescription>Actionable tips based on gaps</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {result.suggestions.length ? (
+                        <ul className="list-disc pl-5 space-y-2 text-sm">
+                          {result.suggestions.map((rec, idx) => (
+                            <li key={idx} className="text-gray-700 dark:text-gray-300">{rec}</li>
                           ))}
                         </ul>
-                      </div>
+                      ) : (
+                        <p className="text-sm text-gray-600 dark:text-gray-400">No suggestions at this time.</p>
+                      )}
                     </CardContent>
                   </Card>
-                </div>
-              )}
-
-              {!isAnalyzing && !result && (
-                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                  <Info className="w-3 h-3" />
-                  Tip: For best results, avoid using images or tables; stick to clean text formatting.
                 </div>
               )}
             </CardContent>

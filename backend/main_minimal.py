@@ -1,41 +1,18 @@
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-import sys
 import os
-import time
-import logging
-from logging.handlers import RotatingFileHandler
-import json
-from datetime import datetime
-from typing import Dict, Any
+import sys
 from dotenv import load_dotenv
 
-# Load environment variables first
+# Ensure env is loaded before importing routers/models
 load_dotenv()
+# Force SQLite for local dev to avoid psycopg2 requirement
+os.environ["DATABASE_URL"] = os.getenv("DATABASE_URL", "sqlite:///./dev.db") or "sqlite:///./dev.db"
 
-# Setup structured logging
-log_dir = os.path.join(os.path.dirname(__file__), "logs")
-os.makedirs(log_dir, exist_ok=True)
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+import logging
+from datetime import datetime
 
-# Configure logger
-logger = logging.getLogger("career_navigator")
-logger.setLevel(logging.INFO)
-
-# Console handler
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.INFO)
-console_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-console_handler.setFormatter(console_format)
-
-# Add handlers
-logger.addHandler(console_handler)
-
-# Log startup
-logger.info("Starting Career Navigator API")
-
-sys.path.append('../')
-
-# Initialize FastAPI with updated version
+# Initialize FastAPI
 app = FastAPI(
     title="Career Navigator API",
     description="AI-powered university placement management system",
@@ -48,17 +25,26 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://*.vercel.app"],
+    allow_origins=["http://localhost:3000", "http://localhost:3001", "https://*.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Import routers AFTER env setup
+from backend.routers import ats
+from backend.routers import auth as auth_router
+
+# Create tables for SQLite on startup
+try:
+    sys.path.append("../")
+    from shared.models import create_tables
+    create_tables()
+except Exception as e:
+    logging.getLogger("career_navigator").warning(f"DB initialization skipped: {e}")
+
 @app.get("/")
-async def root() -> Dict[str, Any]:
-    """
-    Root endpoint providing information about the API
-    """
+async def root():
     return {
         "name": "Career Navigator API",
         "version": "2.0.0",
@@ -76,10 +62,7 @@ async def root() -> Dict[str, Any]:
     }
 
 @app.get("/health")
-async def health_check() -> Dict[str, Any]:
-    """
-    Health check endpoint for monitoring
-    """
+async def health_check():
     return {
         "status": "healthy",
         "service": "fastapi",
@@ -88,20 +71,11 @@ async def health_check() -> Dict[str, Any]:
         "environment": os.getenv("ENVIRONMENT", "development")
     }
 
+# Include routers
+app.include_router(ats.router)
+app.include_router(auth_router.router)
+
 if __name__ == "__main__":
     import uvicorn
-    
-    # Get port from environment or use default
     port = int(os.getenv("PORT", 8000))
-    
-    # Log startup configuration
-    logger.info(f"Starting uvicorn server on port {port}")
-    
-    # Run the application
-    uvicorn.run(
-        "main_minimal:app", 
-        host="0.0.0.0", 
-        port=port, 
-        reload=True,
-        log_level="info"
-    )
+    uvicorn.run("main_minimal:app", host="0.0.0.0", port=port, reload=True, log_level="info")

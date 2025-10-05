@@ -40,6 +40,18 @@ export const api = {
     getSkillGaps: () => apiClient.get('/analytics/student/skill-gaps'),
     getStudentProgress: (studentId: number) => apiClient.get(`/analytics/student/${studentId}/progress`),
   },
+  ats: {
+    scan: (payload: {
+      resume_text: string;
+      job_description: string;
+      required_keywords?: string[];
+      preferred_keywords?: string[];
+      synonyms?: Record<string, string[]>;
+    }) => apiClient.post('/ats/scan', payload),
+    scanUpload: (formData: FormData) => apiClient.post('/ats/scan-upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  },
   jobEvents: {
     list: (jobId?: number) => apiClient.get('/job-events/', { params: { job_id: jobId } }),
     get: (id: number) => apiClient.get(`/job-events/${id}`),

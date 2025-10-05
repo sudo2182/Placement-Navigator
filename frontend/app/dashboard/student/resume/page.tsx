@@ -29,7 +29,8 @@ import {
   Mail,
   Globe,
   Github,
-  Linkedin
+  Linkedin,
+  FileText
 } from "lucide-react"
 import Link from "next/link"
 
@@ -698,6 +699,7 @@ export default function ResumeDataPage() {
   const [activeTab, setActiveTab] = useState("personal")
   const [isSaving, setIsSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
+  const [isGenerating, setIsGenerating] = useState(false)
 
   const updatePersonalData = (field: string, value: string) => {
     setFormData(prev => ({
@@ -769,6 +771,182 @@ export default function ResumeDataPage() {
 
   const completion = calculateCompletion()
 
+  const generateATSResume = async () => {
+    try {
+      setIsGenerating(true)
+      const data = formData
+
+      // Limit content to keep it one-page and ATS-friendly
+      const projects = (data.projects || []).slice(0, 2)
+      const internships = (data.internships || []).slice(0, 2)
+      const technicalSkills = (data.skills?.technical || []).slice(0, 8)
+      const toolSkills = (data.skills?.tools || []).slice(0, 6)
+      const softSkills = (data.skills?.soft || []).slice(0, 6)
+      const certifications = (data.certifications || []).slice(0, 3)
+      const achievements = (data.achievements || []).slice(0, 3)
+
+      const fullName = `${data.personal?.firstName || ""} ${data.personal?.lastName || ""}`.trim()
+      const contactLine = [
+        data.personal?.email,
+        data.personal?.phone,
+        data.personal?.linkedin,
+        data.personal?.github,
+        data.personal?.portfolio
+      ].filter(Boolean).join(" | ")
+
+      const educationLine = `${data.academic?.course || ""}${data.academic?.specialization ? `, ${data.academic.specialization}` : ""}`
+      const eduMeta = [
+        data.academic?.year,
+        data.academic?.cgpa ? `CGPA: ${data.academic.cgpa}` : null,
+        data.academic?.expectedGraduation ? `Graduation: ${data.academic.expectedGraduation}` : null
+      ].filter(Boolean).join(" | ")
+
+      const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${fullName} - Resume</title>
+  <style>
+    @page { size: A4; margin: 12mm; }
+    html, body { padding: 0; margin: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Arial, sans-serif; color: #111; }
+    .container { max-width: 800px; margin: 0 auto; padding: 0; }
+    .header { text-align: center; margin-bottom: 8px; }
+    .name { font-size: 22px; font-weight: 700; letter-spacing: 0.3px; }
+    .contact { font-size: 11px; color: #333; margin-top: 6px; }
+    .section { margin-top: 12px; }
+    .section-title { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .item-title { font-weight: 600; font-size: 12px; }
+    .item-sub { font-size: 11px; color: #444; }
+    ul { padding-left: 16px; margin: 4px 0 0 0; }
+    li { font-size: 11px; line-height: 1.35; margin-bottom: 3px; }
+    .skills-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .skill-pill { font-size: 11px; border: 1px solid #ddd; border-radius: 6px; padding: 2px 6px; }
+    .small { font-size: 11px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="name">${fullName || "Unnamed Student"}</div>
+      <div class="contact">${contactLine || ""}</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Education</div>
+      <div class="item-title">${educationLine || ""}</div>
+      <div class="item-sub">${eduMeta || ""}</div>
+      <div class="small">10th: ${data.academic?.tenthMarks || ""} (${data.academic?.tenthBoard || ""}, ${data.academic?.tenthYear || ""})</div>
+      <div class="small">12th: ${data.academic?.twelfthMarks || ""} (${data.academic?.twelfthBoard || ""}, ${data.academic?.twelfthYear || ""})</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Skills</div>
+      <div class="skills-list">
+        ${technicalSkills.map(s => `<span class="skill-pill">${s}</span>`).join("")}
+      </div>
+      ${toolSkills.length ? `<div class="small" style="margin-top:6px"><strong>Tools:</strong> ${toolSkills.join(", ")}</div>` : ""}
+      ${softSkills.length ? `<div class="small" style="margin-top:4px"><strong>Soft:</strong> ${softSkills.join(", ")}</div>` : ""}
+    </div>
+
+    ${projects.length ? `<div class="section">
+      <div class="section-title">Projects</div>
+      ${projects.map(p => `
+        <div>
+          <div class="item-title">${p.title || "Project"}</div>
+          <div class="item-sub">${[p.technologies, p.duration].filter(Boolean).join(" | ")}</div>
+          ${p.description ? `<ul><li>${p.description}</li></ul>` : ""}
+          ${p.github ? `<div class="small">GitHub: ${p.github}</div>` : ""}
+        </div>
+      `).join("")}
+    </div>` : ""}
+
+    ${internships.length ? `<div class="section">
+      <div class="section-title">Internships</div>
+      ${internships.map(i => `
+        <div>
+          <div class="item-title">${[i.company, i.position].filter(Boolean).join(" — ")}</div>
+          <div class="item-sub">${[i.location, i.duration].filter(Boolean).join(" | ")}</div>
+          ${i.description ? `<ul><li>${i.description}</li></ul>` : ""}
+        </div>
+      `).join("")}
+    </div>` : ""}
+
+    ${certifications.length ? `<div class="section">
+      <div class="section-title">Certifications</div>
+      <ul>
+        ${certifications.map((c:any) => `<li>${[c.name, c.issuer, c.date].filter(Boolean).join(" — ")}</li>`).join("")}
+      </ul>
+    </div>` : ""}
+
+    ${achievements.length ? `<div class="section">
+      <div class="section-title">Achievements</div>
+      <ul>
+        ${achievements.map((a:any) => `<li>${[a.title, a.date].filter(Boolean).join(" — ")}${a.description ? `: ${a.description}` : ""}</li>`).join("")}
+      </ul>
+    </div>` : ""}
+  </div>
+</body>
+</html>`
+
+      const popup = window.open("", "_blank", "noopener,noreferrer,width=900,height=1000")
+      if (popup) {
+        popup.document.open()
+        popup.document.write(html)
+        popup.document.close()
+        setTimeout(() => {
+          try { popup.focus(); popup.print(); } catch (e) {}
+        }, 500)
+      } else {
+        const blob = new Blob([html], { type: "text/html" })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        a.target = "_blank"
+        a.download = `${fullName || "resume"}.html`
+        a.click()
+        URL.revokeObjectURL(url)
+      }
+    } catch (e) {
+      console.error("Resume generation failed", e)
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+  // Remove ATS generator and DOCX-related code
+  // const [pdfStyle, setPdfStyle] = useState<"ats" | "jake">("jake")
+  // const [docxGenerating, setDocxGenerating] = useState(false)
+  // const [docxFile, setDocxFile] = useState<File | undefined>(undefined)
+  // const handleGenerateDOCX = async (file?: File) => { /* removed */ }
+  // Cleanup removed logic
+
+  const handleDownloadPDF = async () => {
+    try {
+      setIsGenerating(true)
+      const res = await fetch("/api/resume/pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data: formData, style: "jake" }),
+      })
+      if (!res.ok) throw new Error("Failed to generate PDF")
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const fullName = `${formData.personal?.firstName || "resume"} ${formData.personal?.lastName || ""}`.trim() || "resume"
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `${fullName.replace(/\s+/g, "_")}_Jake_Resume.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+
   return (
     <AppLayout>
       <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
@@ -811,6 +989,11 @@ export default function ResumeDataPage() {
                 <Button onClick={handleSave} disabled={isSaving} className="gap-2">
                   <Save className="w-4 h-4" />
                   {isSaving ? "Saving..." : "Save Changes"}
+                </Button>
+                
+                <Button onClick={handleDownloadPDF} disabled={isGenerating} variant="default" className="gap-2">
+                  <FileText className="w-4 h-4" />
+                  {isGenerating ? "Preparing PDF..." : "Download Jake PDF"}
                 </Button>
               </div>
             </div>

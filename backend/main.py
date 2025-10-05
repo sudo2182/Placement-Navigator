@@ -46,7 +46,7 @@ logger.info("Starting Career Navigator API")
 
 sys.path.append('../')
 from shared.models import create_tables
-from backend.routers import auth, jobs, analytics, job_events, shortlists, opt_out, bulletin, resources, courses, notifications
+from backend.routers import auth, jobs, analytics, job_events, shortlists, opt_out, bulletin, resources, courses, notifications, ats
 
 # Database tables will be created on first use
 # create_tables() is called lazily when needed
@@ -102,6 +102,7 @@ app.include_router(bulletin.router)
 app.include_router(resources.router)
 app.include_router(courses.router)
 app.include_router(notifications.router)
+app.include_router(ats.router)
 
 @app.get("/")
 async def root() -> Dict[str, Any]:
