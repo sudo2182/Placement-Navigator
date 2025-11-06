@@ -29,15 +29,17 @@ export const useAuthStore = create<AuthStore>((set) => ({
   
   login: async (email: string, password: string) => {
     set({ isLoading: true });
-    // Bypass backend authentication: accept any credentials and proceed
-    const dummyUser: User = {
-      id: Date.now(),
-      email,
-      role: 'student',
-      profile_data: {}
-    };
-    localStorage.setItem('token', 'dev-bypass');
-    set({ user: dummyUser, isLoading: false });
+    try {
+      const { api } = await import('@/lib/api');
+      const response = await api.auth.login({ email, password });
+      const { access_token, user } = response.data as any;
+      
+      localStorage.setItem('token', access_token);
+      set({ user, isLoading: false });
+    } catch (error: any) {
+      set({ isLoading: false });
+      throw error;
+    }
   },
   
   register: async (email: string, password: string, role: string) => {

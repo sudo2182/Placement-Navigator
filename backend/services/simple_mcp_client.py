@@ -40,7 +40,8 @@ class SimpleMCPClient:
                 "max_results": max_results
             })
             
-            return result
+            # Parse JSON from MCP response format
+            return self._parse_mcp_response(result)
             
         except Exception as e:
             return {"error": f"MCP call failed: {str(e)}"}
@@ -59,7 +60,8 @@ class SimpleMCPClient:
                 "format": "text"
             })
             
-            return result
+            # Parse JSON from MCP response format
+            return self._parse_mcp_response(result)
             
         except Exception as e:
             return {"error": f"Resume generation failed: {str(e)}"}
@@ -77,7 +79,8 @@ class SimpleMCPClient:
                 "analysis_type": analysis_type
             })
             
-            return result
+            # Parse JSON from MCP response format
+            return self._parse_mcp_response(result)
             
         except Exception as e:
             return {"error": f"Progress analysis failed: {str(e)}"}
@@ -95,10 +98,48 @@ class SimpleMCPClient:
                 "auto_notify": True
             })
             
-            return result
+            # Parse JSON from MCP response format
+            return self._parse_mcp_response(result)
             
         except Exception as e:
             return {"error": f"Batch processing failed: {str(e)}"}
+    
+    def _parse_mcp_response(self, mcp_response: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Parse MCP tool response format to extract JSON data
+        
+        MCP response format:
+        {
+            "content": [
+                {
+                    "type": "text",
+                    "text": "{...json string...}"
+                }
+            ]
+        }
+        """
+        try:
+            # Extract text content from MCP response
+            if isinstance(mcp_response, dict):
+                content = mcp_response.get("content", [])
+                if content and isinstance(content, list) and len(content) > 0:
+                    text_content = content[0].get("text", "")
+                    if text_content:
+                        # Parse JSON string to dict
+                        return json.loads(text_content)
+                # If no content array, try direct access
+                if "error" in mcp_response:
+                    return mcp_response
+                # If it's already a dict (not wrapped), return as-is
+                return mcp_response
+            
+            # If response is already a dict, return as-is
+            return mcp_response if isinstance(mcp_response, dict) else {"error": "Invalid response format"}
+            
+        except json.JSONDecodeError as e:
+            return {"error": f"Failed to parse MCP response JSON: {str(e)}", "raw_response": str(mcp_response)}
+        except Exception as e:
+            return {"error": f"Failed to parse MCP response: {str(e)}", "raw_response": str(mcp_response)}
 
 # Global MCP client instance
 simple_mcp_client = SimpleMCPClient()

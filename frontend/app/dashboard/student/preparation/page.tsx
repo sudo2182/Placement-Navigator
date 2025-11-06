@@ -2,174 +2,69 @@
 
 import { useState, useEffect } from "react"
 import AppLayout from "@/components/AppLayout"
-import { api } from "@/lib/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { 
   BookOpen, 
-  Search, 
+  Video, 
+  Link as LinkIcon, 
+  FileText, 
   ExternalLink, 
-  Calendar, 
-  Clock, 
-  Users, 
-  ArrowLeft,
-  Play,
-  FileText,
-  Video,
-  Link as LinkIcon,
+  Star, 
+  User, 
+  Bookmark, 
+  Share2, 
   GraduationCap,
-  Target,
-  Award,
-  CheckCircle,
-  User,
+  Calendar as CalendarIcon,
+  Clock,
+  Users,
   MapPin,
-  CalendarDays,
-  Download,
-  Star,
-  TrendingUp,
-  Bookmark,
-  Share2
+  CheckCircle,
+  Loader2,
+  AlertCircle
 } from "lucide-react"
+import { api } from "@/lib/api"
+import { useAuthStore } from "@/store/auth"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import Link from "next/link"
 
-// Mock resources data
-const resourcesData = [
-  {
-    id: 1,
-    title: "Data Structures and Algorithms Complete Guide",
-    description: "Comprehensive guide covering all important DSA topics with examples and practice problems.",
-    type: "document",
-    url: "https://example.com/dsa-guide",
-    faculty: "Dr. Priya Sharma",
-    department: "Computer Engineering",
-    postedDate: "2024-01-15",
-    tags: ["DSA", "Programming", "Interview Prep"],
-    rating: 4.8,
-    views: 1250
-  },
-  {
-    id: 2,
-    title: "System Design Interview Preparation",
-    description: "Video series covering system design concepts for technical interviews at top companies.",
-    type: "video",
-    url: "https://youtube.com/playlist?list=example",
-    faculty: "Prof. Rajesh Kumar",
-    department: "Computer Engineering",
-    postedDate: "2024-01-20",
-    tags: ["System Design", "Interview", "Architecture"],
-    rating: 4.9,
-    views: 890
-  },
-  {
-    id: 3,
-    title: "JavaScript Modern Development Practices",
-    description: "Learn modern JavaScript, ES6+ features, and best practices for web development.",
-    type: "link",
-    url: "https://developer.mozilla.org/en-US/docs/Web/JavaScript",
-    faculty: "Dr. Anita Desai",
-    department: "IT",
-    postedDate: "2024-01-18",
-    tags: ["JavaScript", "Web Development", "Frontend"],
-    rating: 4.7,
-    views: 675
-  },
-  {
-    id: 4,
-    title: "Machine Learning Fundamentals",
-    description: "Introduction to ML concepts, algorithms, and practical implementation using Python.",
-    type: "document",
-    url: "https://example.com/ml-fundamentals",
-    faculty: "Dr. Suresh Patel",
-    department: "Computer Engineering",
-    postedDate: "2024-01-22",
-    tags: ["Machine Learning", "Python", "AI"],
-    rating: 4.6,
-    views: 543
+interface Resource {
+  id: number
+  title: string
+  description: string | null
+  resource_type: string
+  external_url: string | null
+  file_path: string | null
+  tags: string[]
+  views: number
+  downloads: number
+  created_at: string
+  faculty?: {
+    name: string
+    department?: string
   }
-]
+}
 
-// Mock crash courses data
-const crashCoursesData = [
-  {
-    id: 1,
-    title: "Advanced React Development Bootcamp",
-    description: "Intensive 3-day bootcamp covering React hooks, context, performance optimization, and testing.",
-    instructor: "Prof. Meera Joshi",
-    department: "Computer Engineering",
-    startDate: "2024-02-15",
-    endDate: "2024-02-17",
-    duration: "3 days",
-    time: "10:00 AM - 4:00 PM",
-    location: "Lab 301, IT Building",
-    maxStudents: 30,
-    registeredStudents: 18,
-    prerequisites: ["Basic React knowledge", "JavaScript ES6+"],
-    syllabus: [
-      "Advanced React Hooks",
-      "State Management with Context",
-      "Performance Optimization",
-      "Testing React Applications",
-      "Deployment Strategies"
-    ],
-    tags: ["React", "Frontend", "JavaScript"],
-    status: "open"
-  },
-  {
-    id: 2,
-    title: "Data Science with Python",
-    description: "Learn data analysis, visualization, and machine learning using Python libraries.",
-    instructor: "Dr. Amit Verma",
-    department: "Computer Engineering",
-    startDate: "2024-02-20",
-    endDate: "2024-02-24",
-    duration: "5 days",
-    time: "2:00 PM - 6:00 PM",
-    location: "Computer Lab 2",
-    maxStudents: 25,
-    registeredStudents: 25,
-    prerequisites: ["Python basics", "Statistics fundamentals"],
-    syllabus: [
-      "NumPy and Pandas",
-      "Data Visualization with Matplotlib",
-      "Machine Learning with Scikit-learn",
-      "Data Cleaning Techniques",
-      "Project Implementation"
-    ],
-    tags: ["Python", "Data Science", "ML"],
-    status: "full"
-  },
-  {
-    id: 3,
-    title: "Cloud Computing Essentials",
-    description: "Introduction to AWS services, deployment strategies, and cloud architecture patterns.",
-    instructor: "Prof. Kavita Singh",
-    department: "IT",
-    startDate: "2024-02-25",
-    endDate: "2024-02-27",
-    duration: "3 days",
-    time: "9:00 AM - 1:00 PM",
-    location: "Online (Zoom)",
-    maxStudents: 50,
-    registeredStudents: 12,
-    prerequisites: ["Basic networking knowledge", "Linux fundamentals"],
-    syllabus: [
-      "AWS Core Services",
-      "EC2 and S3 Management",
-      "Database Services (RDS)",
-      "Load Balancing and Auto Scaling",
-      "Security Best Practices"
-    ],
-    tags: ["AWS", "Cloud", "DevOps"],
-    status: "open"
+interface Course {
+  id: number
+  title: string
+  description: string
+  subject: string
+  start_date: string
+  end_date: string
+  schedule: any
+  max_students: number
+  current_enrollments: number
+  is_active: boolean
+  created_at: string
+  faculty?: {
+    name: string
+    department?: string
   }
-]
+}
 
-function ResourceCard({ resource }: { resource: any }) {
+function ResourceCard({ resource }: { resource: Resource }) {
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'video':
@@ -201,12 +96,12 @@ function ResourceCard({ resource }: { resource: any }) {
       <CardContent className="p-6">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${getTypeColor(resource.resource_type || resource.type)}`}>
-              {getTypeIcon(resource.resource_type || resource.type)}
+            <div className={`p-2 rounded-lg ${getTypeColor(resource.resource_type)}`}>
+              {getTypeIcon(resource.resource_type)}
             </div>
             <div>
               <Badge variant="outline" className="mb-2 capitalize">
-                {resource.resource_type || resource.type}
+                {resource.resource_type}
               </Badge>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                 {resource.title}
@@ -224,218 +119,143 @@ function ResourceCard({ resource }: { resource: any }) {
         </div>
 
         <p className="text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
-          {resource.description}
+          {resource.description || "No description available"}
         </p>
 
-        <div className="flex flex-wrap gap-2 mb-4">
-          {resource.tags.map((tag: string) => (
-            <Badge key={tag} variant="secondary" className="text-xs">
-              {tag}
-            </Badge>
-          ))}
-        </div>
+        {resource.tags && resource.tags.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {resource.tags.map((tag: string) => (
+              <Badge key={tag} variant="secondary" className="text-xs">
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        )}
 
         <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-4">
           <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1">
-              <User className="w-4 h-4" />
-              {resource.faculty}
-            </span>
-            <span>{resource.department}</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1">
-              <Star className="w-4 h-4 text-yellow-500" />
-              {resource.rating}
-            </span>
-            <span>{resource.views} views</span>
+            <span>{resource.views || 0} views</span>
+            <span>{resource.downloads || 0} downloads</span>
           </div>
         </div>
 
         <div className="flex items-center justify-between">
           <span className="text-sm text-gray-500 dark:text-gray-400">
-            Posted on {new Date(resource.postedDate).toLocaleDateString()}
+            Posted on {new Date(resource.created_at).toLocaleDateString()}
           </span>
-          <Button asChild className="gap-2">
-            <a href={resource.url} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="w-4 h-4" />
-              Access Resource
-            </a>
-          </Button>
+          {(resource.external_url || resource.file_path) && (
+            <Button asChild className="gap-2">
+              <a href={resource.external_url || resource.file_path || "#"} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="w-4 h-4" />
+                Access Resource
+              </a>
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
   )
 }
 
-function ResourceList({ resources }: { resources: any[] }) {
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {resources.map((resource) => (
-        <ResourceCard key={resource.id} resource={resource} />
-      ))}
-    </div>
-  )
-}
-
-function CrashCourseCard({ course }: { course: any }) {
+function CourseCard({ course, onRegister }: { course: Course, onRegister: (id: number) => void }) {
   const [isRegistering, setIsRegistering] = useState(false)
-  const [isRegistered, setIsRegistered] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleRegister = async () => {
-    if (course.status === 'full') {
-      alert("This course is full. Please try another course.")
-      return
-    }
-
     setIsRegistering(true)
-    // Mock API call
-    setTimeout(() => {
+    setError(null)
+    try {
+      await api.courses.register(course.id)
+      onRegister(course.id)
+    } catch (err: any) {
+      console.error('Failed to register:', err)
+      setError(err.response?.data?.detail || "Failed to register for course")
+    } finally {
       setIsRegistering(false)
-      setIsRegistered(true)
-      alert("Successfully registered for the course!")
-    }, 1500)
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'open':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300'
-      case 'full':
-        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300'
-      case 'closed':
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300'
-      default:
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300'
     }
   }
 
-  const spotsLeft = course.maxStudents - course.registeredStudents
+  const isFull = course.current_enrollments >= course.max_students
+  const daysUntilStart = Math.ceil((new Date(course.start_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
 
   return (
     <Card className="hover:shadow-lg transition-all duration-300">
       <CardContent className="p-6">
         <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-purple-500/10 to-pink-500/10 dark:from-purple-500/20 dark:to-pink-500/20 backdrop-blur-sm border border-gray-200 dark:border-white/10 flex items-center justify-center">
-              <GraduationCap className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                {course.title}
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                by {course.instructor}
-              </p>
-            </div>
+          <div>
+            <Badge variant="outline" className="mb-2">
+              {course.subject || "General"}
+            </Badge>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              {course.title}
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">
+              {course.description}
+            </p>
           </div>
-          <Badge className={getStatusColor(course.status)} variant="outline">
-            {course.status === 'open' ? 'Open' : course.status === 'full' ? 'Full' : 'Closed'}
+          <Badge variant={course.is_active && !isFull ? 'default' : 'secondary'}>
+            {isFull ? 'Full' : course.is_active ? 'Open' : 'Closed'}
           </Badge>
         </div>
 
-        <p className="text-gray-600 dark:text-gray-400 mb-4 leading-relaxed">
-          {course.description}
-        </p>
-
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-          <div className="text-center p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
-            <CalendarDays className="w-5 h-5 text-blue-600 dark:text-blue-400 mx-auto mb-1" />
-            <p className="text-xs text-gray-600 dark:text-gray-400">Duration</p>
-            <p className="font-medium text-sm">{course.duration}</p>
-          </div>
-          <div className="text-center p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
-            <Clock className="w-5 h-5 text-green-600 dark:text-green-400 mx-auto mb-1" />
-            <p className="text-xs text-gray-600 dark:text-gray-400">Time</p>
-            <p className="font-medium text-sm">{course.time}</p>
-          </div>
-          <div className="text-center p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
-            <MapPin className="w-5 h-5 text-purple-600 dark:text-purple-400 mx-auto mb-1" />
-            <p className="text-xs text-gray-600 dark:text-gray-400">Location</p>
-            <p className="font-medium text-sm">{course.location}</p>
-          </div>
-          <div className="text-center p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
-            <Users className="w-5 h-5 text-orange-600 dark:text-orange-400 mx-auto mb-1" />
-            <p className="text-xs text-gray-600 dark:text-gray-400">Spots Left</p>
-            <p className="font-medium text-sm">{spotsLeft}</p>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap gap-2 mb-4">
-          {course.tags.map((tag: string) => (
-            <Badge key={tag} variant="secondary" className="text-xs">
-              {tag}
-            </Badge>
-          ))}
-        </div>
-
         <div className="space-y-3 mb-4">
-          <div>
-            <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
-              Course Dates
-            </p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {new Date(course.startDate).toLocaleDateString()} - {new Date(course.endDate).toLocaleDateString()}
-            </p>
+          <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+            <span className="flex items-center gap-1">
+              <CalendarIcon className="w-4 h-4" />
+              {new Date(course.start_date).toLocaleDateString()} - {new Date(course.end_date).toLocaleDateString()}
+            </span>
+            {course.schedule?.time && (
+              <span className="flex items-center gap-1">
+                <Clock className="w-4 h-4" />
+                {course.schedule.time}
+              </span>
+            )}
           </div>
           
-          <div>
-            <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
-              Prerequisites
-            </p>
-            <ul className="text-sm text-gray-600 dark:text-gray-400 list-disc list-inside">
-              {course.prerequisites.map((prereq: string, index: number) => (
-                <li key={index}>{prereq}</li>
-              ))}
-            </ul>
+          {course.schedule?.location && (
+            <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
+              <MapPin className="w-4 h-4" />
+              {course.schedule.location}
+            </div>
+          )}
+
+          <div className="flex items-center justify-between text-sm">
+            <span className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
+              <Users className="w-4 h-4" />
+              {course.current_enrollments || 0}/{course.max_students} students
+            </span>
+            {daysUntilStart > 0 && (
+              <span className="text-gray-500">
+                Starts in {daysUntilStart} day{daysUntilStart !== 1 ? 's' : ''}
+              </span>
+            )}
           </div>
         </div>
 
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline" className="w-full mb-3 gap-2">
-              <FileText className="w-4 h-4" />
-              View Syllabus
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{course.title} - Syllabus</DialogTitle>
-              <DialogDescription>
-                Detailed curriculum for this crash course
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-3">
-              <h4 className="font-semibold">Course Outline:</h4>
-              <ul className="space-y-2">
-                {course.syllabus.map((item: string, index: number) => (
-                  <li key={index} className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
-                    <span className="text-sm">{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </DialogContent>
-        </Dialog>
+        {error && (
+          <Alert variant="destructive" className="mb-3">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="text-xs">{error}</AlertDescription>
+          </Alert>
+        )}
 
-        <Button
-          onClick={handleRegister}
-          disabled={course.status === 'full' || isRegistering || isRegistered}
+        <Button 
+          onClick={handleRegister} 
+          disabled={isRegistering || !course.is_active || isFull}
           className="w-full gap-2"
         >
-          {isRegistered ? (
+          {isRegistering ? (
             <>
-              <CheckCircle className="w-4 h-4" />
-              Registered
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Registering...
             </>
-          ) : isRegistering ? (
-            "Registering..."
-          ) : course.status === 'full' ? (
+          ) : isFull ? (
             "Course Full"
+          ) : !course.is_active ? (
+            "Not Available"
           ) : (
             <>
-              <User className="w-4 h-4" />
+              <CheckCircle className="w-4 h-4" />
               Register Now
             </>
           )}
@@ -445,221 +265,153 @@ function CrashCourseCard({ course }: { course: any }) {
   )
 }
 
-function CrashCourseList({ courses }: { courses: any[] }) {
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {courses.map((course) => (
-        <CrashCourseCard key={course.id} course={course} />
-      ))}
-    </div>
-  )
-}
+export default function StudentPreparationPage() {
+  const { user } = useAuthStore()
+  const [resources, setResources] = useState<Resource[]>([])
+  const [courses, setCourses] = useState<Course[]>([])
+  const [isLoadingResources, setIsLoadingResources] = useState(true)
+  const [isLoadingCourses, setIsLoadingCourses] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-export default function PreparationReferencePage() {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [activeTab, setActiveTab] = useState("resources")
-  const [resources, setResources] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState(null)
-
-  // Load resources from API
-  useEffect(() => {
-    const loadResources = async () => {
-      try {
-        setIsLoading(true)
-        setError(null)
-        const resourcesData = await api.resources.list()
-        setResources(resourcesData)
-      } catch (err) {
-        console.error('Failed to load resources:', err)
-        setError('Failed to load resources')
-        // Fallback to empty array
-        setResources([])
-      } finally {
-        setIsLoading(false)
-      }
+  const loadResources = async () => {
+    try {
+      setIsLoadingResources(true)
+      setError(null)
+      const response = await api.resources.list(undefined, undefined)
+      setResources(response.data || [])
+    } catch (err: any) {
+      console.error('Failed to load resources:', err)
+      setError(err.response?.data?.detail || "Failed to load resources")
+    } finally {
+      setIsLoadingResources(false)
     }
+  }
+
+  const loadCourses = async () => {
+    try {
+      setIsLoadingCourses(true)
+      setError(null)
+      const response = await api.courses.list(undefined, undefined)
+      setCourses(response.data || [])
+    } catch (err: any) {
+      console.error('Failed to load courses:', err)
+      setError(err.response?.data?.detail || "Failed to load courses")
+    } finally {
+      setIsLoadingCourses(false)
+    }
+  }
+
+  useEffect(() => {
     loadResources()
+    loadCourses()
   }, [])
 
-  const filteredResources = resources.filter((resource) =>
-    resource.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (resource.description && resource.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (resource.tags && resource.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())))
-  )
+  const handleCourseRegistered = (courseId: number) => {
+    // Refresh courses to update enrollment counts
+    loadCourses()
+  }
 
-  const filteredCourses = crashCoursesData.filter((course) =>
-    course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    course.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    course.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
-  )
+  const displayUser = user ? {
+    id: user.id?.toString() || "1",
+    name: user.profile_data?.first_name && user.profile_data?.last_name
+      ? `${user.profile_data.first_name} ${user.profile_data.last_name}`
+      : user.email?.split('@')[0] || "Student",
+    email: user.email || "",
+    role: "student" as const,
+    sapid: user.profile_data?.student_id || user.id?.toString() || "N/A",
+    course: user.profile_data?.branch || "Computer Science",
+    year: user.profile_data?.batch || "Final Year"
+  } : {
+    id: "1",
+    name: "Student",
+    email: "",
+    role: "student" as const,
+    sapid: "N/A",
+    course: "Computer Science",
+    year: "Final Year"
+  }
 
   return (
-    <AppLayout>
+    <AppLayout user={displayUser}>
       <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
-        {/* Header */}
-        <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700">
-          <div className="p-6">
-            <div className="flex items-center gap-4 mb-4">
-              <Link href="/dashboard/student">
-                <Button variant="ghost" size="sm">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Dashboard
-                </Button>
-              </Link>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 dark:from-blue-500/20 dark:to-purple-500/20 backdrop-blur-sm border border-gray-200 dark:border-white/10 flex items-center justify-center">
-                <BookOpen className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Preparation Resources
-                </h1>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Access study materials and register for crash courses
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-6 max-w-6xl mx-auto space-y-6">
-          {/* Search */}
-          <Card>
-            <CardContent className="p-6">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder="Search resources and courses..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="p-4 text-center">
-                <BookOpen className="w-8 h-8 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{resources.length}</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Resources</p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4 text-center">
-                <GraduationCap className="w-8 h-8 text-purple-600 dark:text-purple-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{crashCoursesData.length}</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Crash Courses</p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4 text-center">
-                <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">2</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Registered</p>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-4 text-center">
-                <TrendingUp className="w-8 h-8 text-orange-600 dark:text-orange-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">85%</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Progress</p>
-              </CardContent>
-            </Card>
+        <div className="p-4 sm:p-6 space-y-6 sm:space-y-8">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Preparation Resources</h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Access study materials, crash courses, and resources shared by faculty
+            </p>
           </div>
 
-          {/* Tabs */}
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="resources" className="gap-2">
-                <BookOpen className="w-4 h-4" />
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {/* Study Resources Section */}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <BookOpen className="w-5 h-5" />
                 Study Resources
-              </TabsTrigger>
-              <TabsTrigger value="courses" className="gap-2">
-                <GraduationCap className="w-4 h-4" />
+              </h2>
+              <Badge variant="outline">{resources.length} resources</Badge>
+            </div>
+
+            {isLoadingResources ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+                <span className="ml-3 text-gray-600 dark:text-gray-400">Loading resources...</span>
+              </div>
+            ) : resources.length === 0 ? (
+              <Card>
+                <CardContent className="p-12 text-center">
+                  <BookOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600 dark:text-gray-400">No resources available yet. Check back later!</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {resources.map((resource) => (
+                  <ResourceCard key={resource.id} resource={resource} />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Crash Courses Section */}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <GraduationCap className="w-5 h-5" />
                 Crash Courses
-              </TabsTrigger>
-            </TabsList>
+              </h2>
+              <Badge variant="outline">{courses.filter(c => c.is_active).length} active</Badge>
+            </div>
 
-            <TabsContent value="resources" className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  Study Resources ({filteredResources.length})
-                </h2>
+            {isLoadingCourses ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+                <span className="ml-3 text-gray-600 dark:text-gray-400">Loading courses...</span>
               </div>
-              
-              {isLoading ? (
-                <Card className="p-12 text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                    Loading resources...
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Please wait while we fetch the latest resources
-                  </p>
-                </Card>
-              ) : error ? (
-                <Card className="p-12 text-center">
-                  <div className="w-16 h-16 text-red-400 mx-auto mb-4 flex items-center justify-center">
-                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                    Error loading resources
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-4">
-                    {error}
-                  </p>
-                  <Button onClick={() => window.location.reload()}>
-                    Try Again
-                  </Button>
-                </Card>
-              ) : filteredResources.length === 0 ? (
-                <Card className="p-12 text-center">
-                  <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                    No resources found
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Try adjusting your search criteria
-                  </p>
-                </Card>
-              ) : (
-                <ResourceList resources={filteredResources} />
-              )}
-            </TabsContent>
-
-            <TabsContent value="courses" className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  Crash Courses ({filteredCourses.length})
-                </h2>
+            ) : courses.length === 0 ? (
+              <Card>
+                <CardContent className="p-12 text-center">
+                  <GraduationCap className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600 dark:text-gray-400">No crash courses available yet. Check back later!</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {courses
+                  .filter(course => course.is_active)
+                  .map((course) => (
+                    <CourseCard key={course.id} course={course} onRegister={handleCourseRegistered} />
+                  ))}
               </div>
-              
-              {filteredCourses.length === 0 ? (
-                <Card className="p-12 text-center">
-                  <GraduationCap className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                    No courses found
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Try adjusting your search criteria
-                  </p>
-                </Card>
-              ) : (
-                <CrashCourseList courses={filteredCourses} />
-              )}
-            </TabsContent>
-          </Tabs>
+            )}
+          </div>
         </div>
       </div>
     </AppLayout>

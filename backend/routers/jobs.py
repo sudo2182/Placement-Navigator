@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any
 from datetime import datetime
@@ -9,6 +9,9 @@ from backend.auth import get_current_user, require_role
 from backend.schemas import JobCreate, JobResponse, ApplicationCreate, ApplicationResponse, AIMatchResponse
 from backend.services.simple_mcp_client import simple_mcp_client
 from backend.services.matching_service import matching_service
+
+# Alias for backwards compatibility
+mcp_client = simple_mcp_client
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
@@ -38,17 +41,115 @@ async def create_job(
 async def list_jobs(
     skip: int = 0,
     limit: int = 50,
+    include_inactive: bool = False,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    jobs = db.query(Job).filter(Job.is_active == True).offset(skip).limit(limit).all()
+    """List jobs - TPO can see all, students only see active"""
+    query = db.query(Job)
+    
+    # Students can only see active jobs
+    if current_user.role == "student":
+        query = query.filter(Job.is_active == True)
+    # TPO/employers can see all if include_inactive is True
+    elif include_inactive:
+        pass  # Show all
+    else:
+        query = query.filter(Job.is_active == True)
+    
+    jobs = query.order_by(Job.created_at.desc()).offset(skip).limit(limit).all()
+    
+    # Add application counts for TPO (as dynamic attribute)
+    if current_user.role in ["tpo", "employer"]:
+        from sqlalchemy import func
+        for job in jobs:
+            app_count = db.query(func.count(Application.id)).filter(
+                Application.job_id == job.id
+            ).scalar()
+            setattr(job, 'application_count', app_count or 0)
+    
     return jobs
 
 @router.get("/{job_id}", response_model=JobResponse)
-async def get_job(job_id: int, db: Session = Depends(get_db)):
-    job = db.query(Job).filter(Job.id == job_id, Job.is_active == True).first()
+async def get_job(
+    job_id: int, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get a specific job (allows inactive for TPO)"""
+    job = db.query(Job).filter(Job.id == job_id).first()
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
+    
+    # Students can only see active jobs, TPO/employers can see all
+    if current_user.role == "student" and not job.is_active:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
     return job
+
+@router.put("/{job_id}", response_model=JobResponse)
+async def update_job(
+    job_id: int,
+    job_update: JobCreate,
+    current_user: User = Depends(require_role(["tpo", "employer"])),
+    db: Session = Depends(get_db)
+):
+    """Update a job posting"""
+    job = db.query(Job).filter(Job.id == job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    # Check authorization
+    if job.posted_by != current_user.id and current_user.role != "tpo":
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Update job fields
+    for key, value in job_update.dict(exclude_unset=True).items():
+        setattr(job, key, value)
+    
+    db.commit()
+    db.refresh(job)
+    return job
+
+@router.patch("/{job_id}/status", response_model=JobResponse)
+async def update_job_status(
+    job_id: int,
+    is_active: bool = Query(..., description="Set job active status"),
+    current_user: User = Depends(require_role(["tpo", "employer"])),
+    db: Session = Depends(get_db)
+):
+    """Update job status (active/inactive)"""
+    job = db.query(Job).filter(Job.id == job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    # Check authorization
+    if job.posted_by != current_user.id and current_user.role != "tpo":
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    job.is_active = is_active
+    db.commit()
+    db.refresh(job)
+    return job
+
+@router.delete("/{job_id}")
+async def delete_job(
+    job_id: int,
+    current_user: User = Depends(require_role(["tpo", "employer"])),
+    db: Session = Depends(get_db)
+):
+    """Delete a job posting"""
+    job = db.query(Job).filter(Job.id == job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    # Check authorization
+    if job.posted_by != current_user.id and current_user.role != "tpo":
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    db.delete(job)
+    db.commit()
+    return {"message": "Job deleted successfully"}
 
 @router.get("/{job_id}/matches", response_model=List[AIMatchResponse])
 async def get_job_matches(

@@ -27,9 +27,12 @@ export const api = {
     token: (data: any) => apiClient.post('/auth/token', data),
   },
   jobs: {
-    list: () => apiClient.get('/jobs/'),
+    list: (includeInactive?: boolean) => apiClient.get('/jobs/', { params: { include_inactive: includeInactive } }),
     get: (id: number) => apiClient.get(`/jobs/${id}`),
     create: (data: any) => apiClient.post('/jobs/', data),
+    update: (id: number, data: any) => apiClient.put(`/jobs/${id}`, data),
+    updateStatus: (id: number, isActive: boolean) => apiClient.patch(`/jobs/${id}/status`, null, { params: { is_active: isActive } }),
+    delete: (id: number) => apiClient.delete(`/jobs/${id}`),
     apply: (id: number, data: any) => apiClient.post(`/jobs/${id}/apply`, data),
     getMatches: (id: number) => apiClient.get(`/jobs/${id}/matches`),
     triggerMatching: (id: number) => apiClient.post(`/jobs/${id}/find-matches`),
@@ -39,6 +42,12 @@ export const api = {
     getRecommendations: () => apiClient.get('/analytics/student/recommendations'),
     getSkillGaps: () => apiClient.get('/analytics/student/skill-gaps'),
     getStudentProgress: (studentId: number) => apiClient.get(`/analytics/student/${studentId}/progress`),
+    tpo: {
+      overview: () => apiClient.get('/analytics/tpo/overview'),
+      jobs: () => apiClient.get('/analytics/tpo/jobs'),
+      students: () => apiClient.get('/analytics/tpo/students'),
+      companies: () => apiClient.get('/analytics/tpo/companies'),
+    },
   },
   jobEvents: {
     list: (jobId?: number) => apiClient.get('/job-events/', { params: { job_id: jobId } }),
@@ -57,7 +66,19 @@ export const api = {
   optOut: {
     list: (status?: string) => apiClient.get('/opt-out/', { params: { status } }),
     get: (id: number) => apiClient.get(`/opt-out/${id}`),
-    create: (data: any) => apiClient.post('/opt-out/', data),
+    create: (data: { reason: string; additional_info?: string; file?: File }) => {
+      const formData = new FormData();
+      formData.append('reason', data.reason);
+      if (data.additional_info) {
+        formData.append('additional_info', data.additional_info);
+      }
+      if (data.file) {
+        formData.append('file', data.file);
+      }
+      return apiClient.post('/opt-out/', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    },
     review: (id: number, data: any) => apiClient.put(`/opt-out/${id}/review`, data),
   },
   bulletin: {
@@ -102,5 +123,52 @@ export const api = {
   github: {
     analyze: (username: string) => apiClient.get(`/github/analyze/${username}`),
     health: () => apiClient.get('/github/health'),
+  },
+  ats: {
+    scan: (file?: File, text?: string) => {
+      const formData = new FormData();
+      if (file) {
+        formData.append('file', file);
+      } else if (text) {
+        formData.append('text', text);
+      }
+      return apiClient.post('/api/v1/ats/scan', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    },
+  },
+  jobFit: {
+    analyze: (jobDescription: string, jobId?: number) => {
+      const formData = new FormData();
+      formData.append('job_description', jobDescription);
+      if (jobId) {
+        formData.append('job_id', jobId.toString());
+      }
+      return apiClient.post('/api/v1/job-fit/analyze', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    },
+  },
+  companies: {
+    list: (sector?: string) => apiClient.get('/companies/', { params: { sector } }),
+    get: (id: number) => apiClient.get(`/companies/${id}`),
+    create: (data: any) => apiClient.post('/companies/', data),
+    update: (id: number, data: any) => apiClient.put(`/companies/${id}`, data),
+    delete: (id: number) => apiClient.delete(`/companies/${id}`),
+  },
+  profiles: {
+    bulkUpload: (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      return apiClient.post('/profiles/bulk-upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    },
+    listProfiles: (role?: string) => apiClient.get('/profiles/', { params: { role } }),
+    getProfile: (id: number) => apiClient.get(`/profiles/${id}`),
+    getUserProfile: (id: number) => apiClient.get(`/profiles/${id}`),
+    getMyProfile: () => apiClient.get('/profiles/me'),
+    updateProfile: (data: any) => apiClient.put('/profiles/me', data),
+    updateMyProfile: (data: any) => apiClient.put('/profiles/me', data),
   },
 };

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import AppLayout from "@/components/AppLayout"
+import { useAuthStore } from "@/store/auth"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,14 +11,20 @@ import { Progress } from "@/components/ui/progress"
 import { Upload, FileText, CheckCircle, AlertCircle, Info, User as UserIcon, Mail, Phone, MapPin, GraduationCap, Briefcase, Award, ClipboardList, Tag } from "lucide-react"
 
 export default function ATSScannerPage() {
-  const mockUser = {
+  const { user } = useAuthStore()
+  
+  const displayUser = user ? {
+    id: user.id?.toString() || "1",
+    name: user.profile_data?.first_name && user.profile_data?.last_name
+      ? `${user.profile_data.first_name} ${user.profile_data.last_name}`
+      : user.email?.split('@')[0] || "Student",
+    email: user.email || "",
+    role: "student" as const
+  } : {
     id: "1",
-    name: "Aditya Ray",
-    email: "adityaray@gmail.com",
-    role: "student" as const,
-    sapid: "60004210001",
-    course: "Computer Science",
-    year: "Final Year"
+    name: "Student",
+    email: "",
+    role: "student" as const
   }
 
   const [file, setFile] = useState<File | null>(null)
@@ -35,89 +42,59 @@ export default function ATSScannerPage() {
   }
 
   const handleAnalyze = async () => {
-    // Analysis will run regardless of whether a file is selected, per requirement to hardcode output
     setIsAnalyzing(true)
     setError(null)
 
-    setTimeout(() => {
-      const mockScore = 85
+    try {
+      const { api } = await import('@/lib/api')
+      
+      let response
+      if (file) {
+        // Upload PDF file
+        response = await api.ats.scan(file)
+      } else {
+        // No file selected
+        setError("Please select a PDF file to analyze")
+        setIsAnalyzing(false)
+        return
+      }
+
+      const data = response.data
+      
+      // Transform backend response to frontend format
       setResult({
-        score: mockScore,
-        summary: "Resume is ATS-friendly with clear sectioning, relevant keywords, and consistent formatting. Strong technical stack and projects aligned to target roles.",
-        recommendations: [
-          "Tailor summary to the specific job description for stronger keyword match",
-          "Add 1–2 quantified outcomes to each experience (e.g., performance improvements, cost savings)",
-          "Ensure consistent tense in bullet points (past for completed roles, present for ongoing)",
-          "Keep file name professional: darsh_iyer_resume.pdf",
-        ],
-        improvements: [
-          "Use action verbs at the start of bullet points (Led, Built, Optimized, Implemented)",
-          "Group skills into categories (Frontend, Backend, DevOps, Data) for readability",
-          "Add links to GitHub and portfolio where relevant (e.g., project repositories)",
-          "Limit sections to concise bullet points to avoid dense paragraphs",
-        ],
+        score: data.score || 0,
+        summary: data.recommendations?.length > 0 
+          ? `Resume scored ${data.score}/100. ${data.recommendations[0] || 'ATS-friendly with good structure.'}`
+          : `Resume scored ${data.score}/100. ATS-friendly with clear sectioning.`,
+        recommendations: data.recommendations || [],
+        improvements: data.recommendations || [], // Use recommendations as improvements
         extracted: {
-          name: "Darsh Iyer",
-          email: "darsh.iyer@example.com",
-          phone: "+91 98765 43210",
-          location: "Mumbai, India",
-          headline: "Computer Engineering student specializing in full‑stack development and data‑driven systems.",
-          skills: [
-            "JavaScript", "TypeScript", "React", "Next.js", "Node.js", "Express",
-            "Python", "FastAPI", "PostgreSQL", "MongoDB", "AWS", "Docker",
-            "CI/CD", "Tailwind CSS"
-          ],
+          name: data.contact?.name || "Not detected",
+          email: data.contact?.emails?.[0] || "Not detected",
+          phone: data.contact?.phones?.[0] || "Not detected",
+          location: data.contact?.urls?.[0] || "Not detected",
+          headline: `Resume with ${data.sections_found?.length || 0} sections detected.`,
+          skills: data.skills || [],
           education: {
-            degree: "B.E. Computer Engineering",
-            college: "Dwarkadas J. Sanghvi College of Engineering",
-            years: "2021–2025"
+            degree: "Education section detected",
+            college: "Details in resume",
+            years: "Not extracted"
           },
-          experience: [
-            {
-              company: "TechStartup Inc.",
-              role: "Software Engineering Intern",
-              period: "May 2024 – Aug 2024",
-              highlights: [
-                "Built REST APIs with Node.js and Express for core features",
-                "Implemented CI/CD pipeline reducing deployment time by 40%",
-                "Collaborated with cross-functional team to ship two product releases"
-              ]
-            },
-            {
-              company: "University Capstone",
-              role: "Project Lead",
-              period: "Jan 2024 – May 2024",
-              highlights: [
-                "Led a team of 4 to design scalable microservices architecture",
-                "Optimized database queries improving response time by 30%",
-                "Deployed services to AWS with Docker and GitHub Actions"
-              ]
-            }
-          ],
-          projects: [
-            {
-              title: "Campus Connect",
-              description: "End-to-end placement workflow platform with dashboards for students, faculty, and TPO.",
-              stack: ["Next.js", "Node.js", "PostgreSQL", "Tailwind CSS"]
-            },
-            {
-              title: "AI Resume Maker",
-              description: "Generates tailored resumes using LLMs and job description parsing.",
-              stack: ["Python", "FastAPI", "MongoDB", "Docker"]
-            }
-          ],
-          certifications: [
-            "AWS Cloud Practitioner (2023)",
-            "Meta Front‑End Developer (2024)"
-          ]
+          experience: [],
+          projects: [],
+          certifications: []
         }
       })
       setIsAnalyzing(false)
-    }, 1000)
+    } catch (err: any) {
+      setError(err.response?.data?.detail || err.message || "Failed to analyze resume")
+      setIsAnalyzing(false)
+    }
   }
 
   return (
-    <AppLayout user={mockUser}>
+    <AppLayout user={displayUser}>
       <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
         <div className="p-4 sm:p-6 space-y-6 sm:space-y-8">
           <div className="flex items-center gap-2">

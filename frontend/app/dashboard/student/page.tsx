@@ -74,17 +74,21 @@ const useStudentData = () => {
         setError(null)
         
         const [jobsRes, bulletinsRes, notificationsRes] = await Promise.all([
-          api.jobs.list(),
-          api.bulletin.list(),
-          api.notifications.list()
+          api.jobs.list().catch(() => ({ data: [] })),
+          api.bulletin.list().catch(() => ({ data: [] })),
+          api.notifications.list().catch(() => ({ data: [] }))
         ])
         
-        setJobs(jobsRes.data || [])
-        setBulletins(bulletinsRes.data || [])
-        setNotifications(notificationsRes.data || [])
-      } catch (err) {
+        // Handle both response formats: { data: [...] } or just [...]
+        setJobs(Array.isArray(jobsRes) ? jobsRes : (jobsRes?.data || []))
+        setBulletins(Array.isArray(bulletinsRes) ? bulletinsRes : (bulletinsRes?.data || []))
+        setNotifications(Array.isArray(notificationsRes) ? notificationsRes : (notificationsRes?.data || []))
+      } catch (err: any) {
         console.error('Error fetching data:', err)
-        setError(err.message || 'Failed to fetch data')
+        // Don't set error - just use empty arrays so dashboard still loads
+        setJobs([])
+        setBulletins([])
+        setNotifications([])
       } finally {
         setIsLoading(false)
       }
@@ -93,17 +97,19 @@ const useStudentData = () => {
     fetchData()
   }, [])
 
-  const [studentData, setStudentData] = useState({
-    name: user?.name || "Student",
-    sapid: user?.id?.toString() || "N/A",
-    course: user?.profile_data?.major || "Computer Science",
-    year: user?.profile_data?.graduation_year?.toString() || "Final Year",
-    cgpa: user?.profile_data?.gpa?.toString() || "8.7",
+  const studentData = {
+    name: user?.profile_data?.first_name && user?.profile_data?.last_name 
+      ? `${user.profile_data.first_name} ${user.profile_data.last_name}`
+      : user?.email?.split('@')[0] || "Student",
+    sapid: user?.profile_data?.student_id || user?.id?.toString() || "N/A",
+    course: user?.profile_data?.branch || user?.profile_data?.major || "Computer Science",
+    year: user?.profile_data?.batch || user?.profile_data?.graduation_year?.toString() || "Final Year",
+    cgpa: user?.profile_data?.cgpa?.toString() || user?.profile_data?.gpa?.toString() || "8.7",
     profileCompletion: 92,
-    appliedJobs: 12,
+    appliedJobs: jobs.length || 0,
     interviewsScheduled: 3,
     offersReceived: 1,
-  })
+  }
 
   return { studentData, jobs, bulletins, notifications, loading: isLoading, error }
 }
@@ -439,38 +445,31 @@ export default function StudentDashboard() {
     )
   }
 
-  // Show error state
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-slate-950 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-red-600 dark:text-red-400 mb-2">Error Loading Data</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
-          <Button 
-            onClick={() => window.location.reload()} 
-            className="bg-red-600 hover:bg-red-700"
-          >
-            Retry
-          </Button>
-        </div>
-      </div>
-    )
-  }
+  // Don't show error state - just show dashboard with empty data
+  // This allows dashboard to load even if API fails
   
   // Use real user data
+  const displayName = user?.profile_data?.first_name && user?.profile_data?.last_name 
+    ? `${user.profile_data.first_name} ${user.profile_data.last_name}`
+    : user?.email?.split('@')[0] || "Student"
+    
   const mockUser = {
     id: user?.id?.toString() || "1",
-    name: "Aditya Ray",
-    email: "adityaray@gmail.com",
+    name: displayName,
+    email: user?.email || "",
     role: "student" as const,
-    sapid: user?.id?.toString() || "N/A",
-    course: user?.profile_data?.major || "Computer Science",
-    year: user?.profile_data?.graduation_year?.toString() || "Final Year"
+    sapid: user?.profile_data?.student_id || user?.id?.toString() || "N/A",
+    course: user?.profile_data?.branch || user?.profile_data?.major || "Computer Science",
+    year: user?.profile_data?.batch || user?.profile_data?.graduation_year?.toString() || "Final Year"
   }
 
   if (loading) {
+    const displayName = user?.profile_data?.first_name && user?.profile_data?.last_name 
+      ? `${user.profile_data.first_name} ${user.profile_data.last_name}`
+      : user?.email?.split('@')[0] || "Student"
+    
     return (
-      <AppLayout user={{ id: user?.id?.toString() || "1", name: "Aditya Ray", email: "adityaray@gmail.com", role: "student", sapid: user?.id?.toString() || "N/A", course: user?.profile_data?.major || "Computer Science", year: user?.profile_data?.graduation_year?.toString() || "Final Year" }}>
+      <AppLayout user={{ id: user?.id?.toString() || "1", name: displayName, email: user?.email || "", role: "student", sapid: user?.profile_data?.student_id || user?.id?.toString() || "N/A", course: user?.profile_data?.branch || user?.profile_data?.major || "Computer Science", year: user?.profile_data?.batch || user?.profile_data?.graduation_year?.toString() || "Final Year" }}>
         <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
           <div className="p-4 sm:p-6 space-y-6 sm:space-y-8">
             {/* Header skeleton */}

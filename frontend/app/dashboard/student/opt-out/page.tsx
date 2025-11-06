@@ -1,7 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import AppLayout from "@/components/AppLayout"
+import { useAuthStore } from "@/store/auth"
+import { api } from "@/lib/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -34,14 +36,7 @@ const optOutReasons = [
   { value: "other", label: "Other" }
 ]
 
-// Mock student data
-const studentData = {
-  name: "Darsh Iyer",
-  sapid: "60004210001",
-  course: "Computer Engineering",
-  year: "Final Year",
-  department: "Engineering"
-}
+// Student data will be fetched from API or auth store
 
 function ReasonDropdown({ value, onChange }: { value: string; onChange: (value: string) => void }) {
   return (
@@ -211,11 +206,50 @@ function FileUpload({ file, onFileChange }: { file: File | null; onFileChange: (
 }
 
 export default function OptOutPage() {
+  const { user } = useAuthStore()
   const [reason, setReason] = useState("")
   const [additionalDetails, setAdditionalDetails] = useState("")
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [studentData, setStudentData] = useState({
+    name: "",
+    sapid: "",
+    course: "",
+    year: "",
+    department: ""
+  })
+
+  // Fetch student profile data
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (user) {
+        try {
+          const profile = await api.profiles.getMyProfile()
+          const profileData = profile.data?.profile_data || {}
+          setStudentData({
+            name: profile.data?.first_name && profile.data?.last_name
+              ? `${profile.data.first_name} ${profile.data.last_name}`
+              : user.email?.split('@')[0] || "Student",
+            sapid: profileData.student_id || profileData.sapid || user.id?.toString() || "N/A",
+            course: profileData.branch || profileData.course || "Computer Science",
+            year: profileData.batch || profileData.year || "Final Year",
+            department: profileData.department || profileData.branch || "Engineering"
+          })
+        } catch (err) {
+          // Fallback to user data
+          setStudentData({
+            name: user.email?.split('@')[0] || "Student",
+            sapid: user.id?.toString() || "N/A",
+            course: "Computer Science",
+            year: "Final Year",
+            department: "Engineering"
+          })
+        }
+      }
+    }
+    loadProfile()
+  }, [user])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -227,11 +261,20 @@ export default function OptOutPage() {
 
     setIsSubmitting(true)
     
-    // Mock API call
-    setTimeout(() => {
-      setIsSubmitting(false)
+    try {
+      const { api } = await import('@/lib/api')
+      await api.optOut.create({
+        reason,
+        additional_info: additionalDetails || undefined,
+        file: uploadedFile
+      })
       setIsSubmitted(true)
-    }, 2000)
+    } catch (err: any) {
+      console.error('Failed to submit opt-out request:', err)
+      alert(err.response?.data?.detail || err.message || "Failed to submit opt-out request. Please try again.")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   if (isSubmitted) {

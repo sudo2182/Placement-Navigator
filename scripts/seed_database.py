@@ -14,6 +14,10 @@ from dotenv import load_dotenv
 # Add the shared directory to the path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'shared'))
 
+# Import password hashing
+sys.path.append(os.path.join(os.path.dirname(__file__), 'backend'))
+from auth import get_password_hash
+
 from enhanced_models import (
     Base, User, Job, Application, AIMatch, JobEvent, Shortlist, 
     OptOutForm, BulletinPost, FacultyResource, CrashCourse, 
@@ -56,7 +60,7 @@ def create_sample_data():
             # TPO
             {
                 "email": "tpo@university.edu",
-                "password_hash": "hashed_password_tpo",
+                "password_hash": get_password_hash("tpo123"),
                 "role": UserRole.TPO,
                 "first_name": "Dr. Sarah",
                 "last_name": "Johnson",
@@ -70,7 +74,7 @@ def create_sample_data():
             # Faculty Members
             {
                 "email": "prof.smith@university.edu",
-                "password_hash": "hashed_password_faculty1",
+                "password_hash": get_password_hash("faculty123"),
                 "role": UserRole.FACULTY,
                 "first_name": "Prof. Michael",
                 "last_name": "Smith",
@@ -84,7 +88,7 @@ def create_sample_data():
             },
             {
                 "email": "prof.davis@university.edu",
-                "password_hash": "hashed_password_faculty2",
+                "password_hash": get_password_hash("faculty123"),
                 "role": UserRole.FACULTY,
                 "first_name": "Prof. Emily",
                 "last_name": "Davis",
@@ -99,7 +103,7 @@ def create_sample_data():
             # Students
             {
                 "email": "john.doe@student.university.edu",
-                "password_hash": "hashed_password_student1",
+                "password_hash": get_password_hash("student123"),
                 "role": UserRole.STUDENT,
                 "first_name": "John",
                 "last_name": "Doe",
@@ -129,7 +133,7 @@ def create_sample_data():
             },
             {
                 "email": "jane.smith@student.university.edu",
-                "password_hash": "hashed_password_student2",
+                "password_hash": get_password_hash("student123"),
                 "role": UserRole.STUDENT,
                 "first_name": "Jane",
                 "last_name": "Smith",
@@ -151,7 +155,7 @@ def create_sample_data():
             },
             {
                 "email": "alex.johnson@student.university.edu",
-                "password_hash": "hashed_password_student3",
+                "password_hash": get_password_hash("student123"),
                 "role": UserRole.STUDENT,
                 "first_name": "Alex",
                 "last_name": "Johnson",
@@ -173,7 +177,7 @@ def create_sample_data():
             },
             {
                 "email": "sarah.wilson@student.university.edu",
-                "password_hash": "hashed_password_student4",
+                "password_hash": get_password_hash("student123"),
                 "role": UserRole.STUDENT,
                 "first_name": "Sarah",
                 "last_name": "Wilson",
@@ -195,7 +199,7 @@ def create_sample_data():
             },
             {
                 "email": "mike.brown@student.university.edu",
-                "password_hash": "hashed_password_student5",
+                "password_hash": get_password_hash("student123"),
                 "role": UserRole.STUDENT,
                 "first_name": "Mike",
                 "last_name": "Brown",

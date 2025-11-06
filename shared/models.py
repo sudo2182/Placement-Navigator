@@ -3,6 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime
 import os
+import uuid
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -125,12 +126,39 @@ class FacultyResource(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+class ResumeUpload(Base):
+    """Store uploaded resume PDFs"""
+    __tablename__ = "resume_uploads"
+    
+    id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    file_key = Column(String, nullable=False)  # S3/MinIO object key
+    parsed_text = Column(Text, nullable=True)  # Extracted text from PDF
+    uploaded_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    
+    # Relationships
+    user = relationship("User", foreign_keys=[user_id])
+
 def get_db():
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
+
+class Company(Base):
+    """Partner companies for TPO"""
+    __tablename__ = "companies"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    website = Column(String)
+    description = Column(Text)
+    sector = Column(String)
+    hq_location = Column(String)
+    point_of_contact = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 def create_tables():
     Base.metadata.create_all(bind=engine)

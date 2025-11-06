@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import AppLayout from "@/components/AppLayout"
+import { useAuthStore } from "@/store/auth"
 import { api } from "@/lib/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -12,12 +13,24 @@ import { Github, BarChart3, Star, GitFork, Code, Activity, Calendar, Users, Chec
 import { ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Tooltip } from "recharts"
 
 export default function GithubAnalyzerPage() {
-  const mockUser = {
-    id: "1",
-    name: "Aditya Ray",
-    email: "adityaray@gmail.com",
+  const { user } = useAuthStore()
+  
+  const displayUser = user ? {
+    id: user.id?.toString() || "1",
+    name: user.profile_data?.first_name && user.profile_data?.last_name
+      ? `${user.profile_data.first_name} ${user.profile_data.last_name}`
+      : user.email?.split('@')[0] || "Student",
+    email: user.email || "",
     role: "student" as const,
-    sapid: "60004210001",
+    sapid: user.profile_data?.student_id || user.id?.toString() || "N/A",
+    course: user.profile_data?.branch || "Computer Science",
+    year: user.profile_data?.batch || "Final Year"
+  } : {
+    id: "1",
+    name: "Student",
+    email: "",
+    role: "student" as const,
+    sapid: "N/A",
     course: "Computer Science",
     year: "Final Year"
   }
@@ -56,7 +69,7 @@ export default function GithubAnalyzerPage() {
   }
 
   return (
-    <AppLayout user={mockUser}>
+    <AppLayout user={displayUser}>
       <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
         <div className="p-4 sm:p-6 space-y-6 sm:space-y-8">
           <div className="flex items-center gap-2">

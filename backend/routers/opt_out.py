@@ -1,11 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from datetime import datetime
 import sys
+import os
 sys.path.append('../')
 from shared.enhanced_models import get_db, OptOutForm, User
 from backend.auth import get_current_user, require_role
+from backend.services.storage_service import storage_service
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/opt-out", tags=["opt-out"])
@@ -33,11 +35,13 @@ class OptOutReview(BaseModel):
 
 @router.post("/", response_model=OptOutResponse)
 async def submit_opt_out(
-    opt_out: OptOutCreate,
+    reason: str = Form(...),
+    additional_info: Optional[str] = Form(None),
+    file: Optional[UploadFile] = File(None),
     current_user: User = Depends(require_role(["student"])),
     db: Session = Depends(get_db)
 ):
-    """Submit a placement opt-out form"""
+    """Submit a placement opt-out form with optional PDF file upload"""
     # Check if student already has a pending or approved opt-out
     existing = db.query(OptOutForm).filter(
         OptOutForm.student_id == current_user.id,
@@ -47,10 +51,30 @@ async def submit_opt_out(
     if existing:
         raise HTTPException(status_code=400, detail="You already have a pending or approved opt-out request")
     
+    # Handle file upload if provided
+    file_path = None
+    if file:
+        # Validate file type
+        if file.content_type != "application/pdf":
+            raise HTTPException(status_code=400, detail="Only PDF files are accepted")
+        
+        # Read file content
+        file_content = await file.read()
+        
+        # Generate file key
+        file_key = f"opt-out/{current_user.id}/{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}_{file.filename}"
+        
+        # Upload to storage
+        if storage_service.upload_file(file_content, file_key, "application/pdf"):
+            file_path = file_key
+        else:
+            raise HTTPException(status_code=500, detail="Failed to upload file")
+    
     db_opt_out = OptOutForm(
         student_id=current_user.id,
-        reason=opt_out.reason,
-        additional_info=opt_out.additional_info
+        reason=reason,
+        additional_info=additional_info,
+        file_path=file_path
     )
     
     db.add(db_opt_out)

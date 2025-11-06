@@ -18,7 +18,7 @@ sys.path.append('..')
 from shared.models import SessionLocal, User, Job, Application, AIMatch, AIJob
 
 # Import AI agents
-from mcp_server.agents.simple_matching_agent import SimpleMatchingAgent
+from mcp_server.agents.matching_agent import MatchingAgent
 from mcp_server.agents.resume_agent import ResumeAgent
 from mcp_server.agents.tracker_agent import TrackerAgent
 
@@ -29,9 +29,10 @@ class SimpleMCPServer:
         self.server_name = "career-navigator-ai-hub"
         self.version = "1.0.0"
         
-        # Initialize AI agents
-        self.matching_agent = SimpleMatchingAgent()
-        self.resume_agent = ResumeAgent(os.getenv("OPENAI_API_KEY", ""))
+        # Initialize AI agents (production agents, not demo)
+        openai_key = os.getenv("OPENAI_API_KEY", "")
+        self.matching_agent = MatchingAgent()  # Production matching agent
+        self.resume_agent = ResumeAgent(openai_key)
         self.tracker_agent = TrackerAgent()
     
     async def list_resources(self) -> List[Dict[str, Any]]:
@@ -148,16 +149,18 @@ class SimpleMCPServer:
                 )
                 
             elif name == "generate_ai_resume":
+                # Convert IDs to strings as resume_agent expects
                 result = await self.resume_agent.generate_tailored_resume(
-                    student_id=arguments['student_id'],
-                    job_id=arguments['job_id'],
+                    student_id=str(arguments['student_id']),
+                    job_id=str(arguments['job_id']),
                     format_type=arguments.get('format', 'text'),
                     db_session=db
                 )
                 
             elif name == "analyze_student_progress":
+                # Convert ID to string as tracker_agent expects
                 result = await self.tracker_agent.analyze_student_progress(
-                    student_id=arguments['student_id'],
+                    student_id=str(arguments['student_id']),
                     analysis_type=arguments.get('analysis_type', 'progress'),
                     db_session=db
                 )

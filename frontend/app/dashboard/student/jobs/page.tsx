@@ -1,7 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import AppLayout from "@/components/AppLayout"
+import { useAuthStore } from "@/store/auth"
+import { api } from "@/lib/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -35,122 +37,33 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 
-// Mock job data
-const jobsData = [
-  {
-    id: 1,
-    company: "Microsoft",
-    logo: "/logos/microsoft.png",
-    position: "Software Development Engineer",
-    location: "Hyderabad, India",
-    salary: "₹18-25 LPA",
-    type: "Full-time",
-    deadline: "2024-02-15",
-    postedDate: "2024-01-20",
-    eligibility: {
-      isEligible: true,
-      minCGPA: 7.0,
-      allowedBranches: ["Computer Engineering", "IT", "Electronics"],
-      maxBacklogs: 0
-    },
-    description: "Join Microsoft as a Software Development Engineer and work on cutting-edge cloud technologies...",
-    requirements: [
-      "Strong programming skills in C++, Java, or Python",
-      "Understanding of data structures and algorithms",
-      "Experience with cloud technologies preferred",
-      "Excellent problem-solving skills"
-    ],
-    roadmapStatus: {
-      aptitude: { status: "completed", date: "2024-01-25" },
-      technical: { status: "in_progress", date: "2024-02-01" },
-      hr: { status: "pending", date: null }
-    },
-    appliedStudents: 145,
-    shortlistedStudents: {
-      aptitude: 45,
-      technical: 12,
-      hr: 0
-    }
-  },
-  {
-    id: 2,
-    company: "Google",
-    logo: "/logos/google.png",
-    position: "Software Engineer Intern",
-    location: "Bangalore, India",
-    salary: "₹80,000/month",
-    type: "Internship",
-    deadline: "2024-02-20",
-    postedDate: "2024-01-22",
-    eligibility: {
-      isEligible: false,
-      minCGPA: 8.5,
-      allowedBranches: ["Computer Engineering", "IT"],
-      maxBacklogs: 0,
-      reason: "CGPA requirement not met (Required: 8.5, Your CGPA: 8.2)"
-    },
-    description: "Summer internship opportunity at Google to work on innovative projects...",
-    requirements: [
-      "Pursuing Bachelor's/Master's in Computer Science",
-      "Strong coding skills in multiple languages",
-      "Previous internship experience preferred",
-      "Open source contributions are a plus"
-    ],
-    roadmapStatus: {
-      aptitude: { status: "pending", date: null },
-      technical: { status: "pending", date: null },
-      hr: { status: "pending", date: null }
-    },
-    appliedStudents: 89,
-    shortlistedStudents: {
-      aptitude: 0,
-      technical: 0,
-      hr: 0
-    }
-  },
-  {
-    id: 3,
-    company: "Amazon",
-    logo: "/logos/amazon.png",
-    position: "SDE-1",
-    location: "Chennai, India",
-    salary: "₹15-20 LPA",
-    type: "Full-time",
-    deadline: "2024-02-18",
-    postedDate: "2024-01-18",
-    eligibility: {
-      isEligible: true,
-      minCGPA: 7.5,
-      allowedBranches: ["Computer Engineering", "IT", "Electronics", "Mechanical"],
-      maxBacklogs: 1
-    },
-    description: "Join Amazon's engineering team and build scalable systems that serve millions of customers...",
-    requirements: [
-      "Bachelor's degree in Engineering",
-      "Proficiency in at least one programming language",
-      "Understanding of system design principles",
-      "Strong analytical and problem-solving skills"
-    ],
-    roadmapStatus: {
-      aptitude: { status: "completed", date: "2024-01-28" },
-      technical: { status: "completed", date: "2024-02-05" },
-      hr: { status: "completed", date: "2024-02-10" }
-    },
-    appliedStudents: 234,
-    shortlistedStudents: {
-      aptitude: 78,
-      technical: 25,
-      hr: 8
+// Helper function to check eligibility
+function checkEligibility(job: any, studentProfile: any) {
+  const profile = studentProfile?.profile_data || {}
+  const cgpa = parseFloat(profile.cgpa) || 0
+  const branch = profile.branch || profile.major || ""
+  const backlogs = profile.backlogs || 0
+  
+  const minCGPA = job.min_cgpa || 0
+  const allowedBranches = job.allowed_branches || []
+  const maxBacklogs = job.max_backlogs || 999
+  
+  const isEligible = cgpa >= minCGPA && 
+                     (allowedBranches.length === 0 || allowedBranches.includes(branch)) &&
+                     backlogs <= maxBacklogs
+  
+  let reason = ""
+  if (!isEligible) {
+    if (cgpa < minCGPA) {
+      reason = `CGPA requirement not met (Required: ${minCGPA}, Your CGPA: ${cgpa})`
+    } else if (allowedBranches.length > 0 && !allowedBranches.includes(branch)) {
+      reason = `Branch not allowed (Required: ${allowedBranches.join(", ")})`
+    } else if (backlogs > maxBacklogs) {
+      reason = `Backlogs exceed limit (Max: ${maxBacklogs}, Your backlogs: ${backlogs})`
     }
   }
-]
-
-// Mock student data for eligibility check
-const studentData = {
-  cgpa: 8.2,
-  branch: "Computer Engineering",
-  backlogs: 0,
-  year: "Final Year"
+  
+  return { isEligible, reason, minCGPA, allowedBranches, maxBacklogs }
 }
 
 function EligibilityTag({ job }: { job: any }) {
@@ -305,11 +218,14 @@ function JobCard({ job }: { job: any }) {
     }
 
     setIsApplying(true)
-    // Mock API call
-    setTimeout(() => {
-      setIsApplying(false)
+    try {
+      await api.jobs.apply(job.id, {})
       alert("Application submitted successfully!")
-    }, 1500)
+    } catch (err: any) {
+      alert(err.response?.data?.detail || "Failed to submit application")
+    } finally {
+      setIsApplying(false)
+    }
   }
 
   const daysLeft = Math.ceil((new Date(job.deadline).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
@@ -447,6 +363,20 @@ function JobCard({ job }: { job: any }) {
 }
 
 function JobList({ jobs }: { jobs: any[] }) {
+  if (jobs.length === 0) {
+    return (
+      <Card className="p-12 text-center">
+        <Briefcase className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+          No jobs found
+        </h3>
+        <p className="text-gray-600 dark:text-gray-400">
+          Try adjusting your search criteria or filters
+        </p>
+      </Card>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {jobs.map((job) => (
@@ -457,19 +387,73 @@ function JobList({ jobs }: { jobs: any[] }) {
 }
 
 export default function JobPostingsPage() {
+  const { user } = useAuthStore()
+  const [jobs, setJobs] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterType, setFilterType] = useState("all")
   const [filterEligibility, setFilterEligibility] = useState("all")
 
-  const filteredJobs = jobsData.filter((job) => {
-    const matchesSearch = job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         job.position.toLowerCase().includes(searchTerm.toLowerCase())
+  // Fetch jobs from API
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        setIsLoading(true)
+        const response = await api.jobs.list()
+        const jobsData = Array.isArray(response.data) ? response.data : (response.data?.items || [])
+        
+        // Transform backend jobs to frontend format and calculate eligibility
+        const transformedJobs = jobsData.map((job: any) => {
+          const eligibility = checkEligibility(job, user)
+          return {
+            ...job,
+            company: job.company || "Unknown",
+            position: job.title || "Untitled",
+            location: job.location || "Not specified",
+            salary: job.salary_range || "Not specified",
+            type: job.job_type || "full-time",
+            deadline: job.deadline || null,
+            postedDate: job.created_at || new Date().toISOString(),
+            eligibility: eligibility,
+            description: job.description || "",
+            requirements: Array.isArray(job.requirements) ? job.requirements : [],
+            roadmapStatus: {
+              aptitude: { status: "pending", date: null },
+              technical: { status: "pending", date: null },
+              hr: { status: "pending", date: null }
+            },
+            appliedStudents: 0, // TODO: Get from backend
+            shortlistedStudents: {
+              aptitude: 0,
+              technical: 0,
+              hr: 0
+            }
+          }
+        })
+        
+        setJobs(transformedJobs)
+      } catch (err: any) {
+        console.error('Error fetching jobs:', err)
+        setJobs([])
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    if (user) {
+      fetchJobs()
+    }
+  }, [user])
+
+  const filteredJobs = jobs.filter((job) => {
+    const matchesSearch = (job.company?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+                         (job.position?.toLowerCase().includes(searchTerm.toLowerCase()) || false)
     
-    const matchesType = filterType === "all" || job.type.toLowerCase() === filterType.toLowerCase()
+    const matchesType = filterType === "all" || job.type?.toLowerCase() === filterType.toLowerCase()
     
     const matchesEligibility = filterEligibility === "all" ||
-                              (filterEligibility === "eligible" && job.eligibility.isEligible) ||
-                              (filterEligibility === "not-eligible" && !job.eligibility.isEligible)
+                              (filterEligibility === "eligible" && job.eligibility?.isEligible) ||
+                              (filterEligibility === "not-eligible" && !job.eligibility?.isEligible)
     
     return matchesSearch && matchesType && matchesEligibility
   })
@@ -550,7 +534,7 @@ export default function JobPostingsPage() {
             <Card>
               <CardContent className="p-4 text-center">
                 <Briefcase className="w-8 h-8 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{jobsData.length}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{jobs.length}</p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Total Jobs</p>
               </CardContent>
             </Card>
@@ -559,7 +543,7 @@ export default function JobPostingsPage() {
               <CardContent className="p-4 text-center">
                 <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400 mx-auto mb-2" />
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {jobsData.filter(job => job.eligibility.isEligible).length}
+                  {jobs.filter(job => job.eligibility?.isEligible).length}
                 </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">Eligible Jobs</p>
               </CardContent>
@@ -590,7 +574,11 @@ export default function JobPostingsPage() {
               </h2>
             </div>
             
-            {filteredJobs.length === 0 ? (
+            {isLoading ? (
+              <Card className="p-12 text-center">
+                <p className="text-gray-600 dark:text-gray-400">Loading jobs...</p>
+              </Card>
+            ) : filteredJobs.length === 0 ? (
               <Card className="p-12 text-center">
                 <Briefcase className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">

@@ -1,11 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import Dict, Any, Optional, List
 from pydantic import BaseModel
 import sys
+import csv
+import io
 sys.path.append('../')
 from shared.models import get_db, User
-from backend.auth import get_current_user, require_role
+from backend.auth import get_current_user, require_role, get_password_hash
+from datetime import datetime
 
 router = APIRouter(prefix="/profiles", tags=["profiles"])
 
@@ -29,6 +32,13 @@ class ProfileResponse(BaseModel):
     
     class Config:
         from_attributes = True
+
+class BulkUploadResult(BaseModel):
+    total: int
+    imported: int
+    duplicates: int
+    errors: int
+    results: List[Dict[str, Any]]
 
 @router.get("/me", response_model=ProfileResponse)
 async def get_my_profile(
@@ -107,3 +117,125 @@ async def list_profiles(
     
     users = query.all()
     return users
+
+@router.post("/bulk-upload", response_model=BulkUploadResult)
+async def bulk_upload_students(
+    file: UploadFile = File(...),
+    current_user: User = Depends(require_role(["tpo"])),
+    db: Session = Depends(get_db)
+):
+    """Bulk upload students from CSV/Excel file"""
+    if not file.filename.endswith(('.csv', '.xlsx', '.xls')):
+        raise HTTPException(status_code=400, detail="Only CSV and Excel files are supported")
+    
+    content = await file.read()
+    
+    # Parse CSV
+    try:
+        csv_content = content.decode('utf-8')
+        csv_reader = csv.DictReader(io.StringIO(csv_content))
+        rows = list(csv_reader)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to parse CSV: {str(e)}")
+    
+    results = []
+    imported = 0
+    duplicates = 0
+    errors = 0
+    
+    for row in rows:
+        try:
+            # Extract data from CSV row
+            email = row.get('email', '').strip()
+            sapid = row.get('sapid', '').strip()
+            name = row.get('name', '').strip()
+            branch = row.get('branch', '').strip()
+            cgpa = row.get('cgpa', '').strip()
+            backlogs = row.get('backlogs', '0').strip()
+            year = row.get('year', '').strip()
+            phone = row.get('phone', '').strip()
+            city = row.get('city', '').strip()
+            skills = row.get('skills', '').strip()
+            internships = row.get('internships', '').strip()
+            
+            if not email:
+                errors += 1
+                results.append({
+                    "sapid": sapid or "N/A",
+                    "name": name or "N/A",
+                    "status": "error",
+                    "message": "Email is required"
+                })
+                continue
+            
+            # Check if user already exists
+            existing = db.query(User).filter(User.email == email).first()
+            if existing:
+                duplicates += 1
+                results.append({
+                    "sapid": sapid or "N/A",
+                    "name": name or existing.email,
+                    "status": "duplicate",
+                    "message": "User already exists"
+                })
+                continue
+            
+            # Create profile data
+            profile_data = {
+                "academic": {
+                    "sapid": sapid,
+                    "branch": branch,
+                    "cgpa": float(cgpa) if cgpa else None,
+                    "backlogs": int(backlogs) if backlogs else 0,
+                    "year": year
+                },
+                "personal": {
+                    "first_name": name.split()[0] if name else "",
+                    "last_name": " ".join(name.split()[1:]) if name and len(name.split()) > 1 else "",
+                    "phone": phone,
+                    "city": city
+                },
+                "skills": skills.split(',') if skills else [],
+                "internships": internships.split(',') if internships else []
+            }
+            
+            # Create user
+            # Generate default password (should be changed on first login)
+            password_hash = get_password_hash("Student@123")
+            
+            new_user = User(
+                email=email,
+                password_hash=password_hash,
+                role="student",
+                profile_data=profile_data,
+                is_active=True
+            )
+            
+            db.add(new_user)
+            db.commit()
+            db.refresh(new_user)
+            
+            imported += 1
+            results.append({
+                "sapid": sapid or "N/A",
+                "name": name or email,
+                "status": "imported",
+                "message": "Successfully imported"
+            })
+            
+        except Exception as e:
+            errors += 1
+            results.append({
+                "sapid": row.get('sapid', 'N/A'),
+                "name": row.get('name', 'N/A'),
+                "status": "error",
+                "message": f"Error: {str(e)}"
+            })
+    
+    return {
+        "total": len(rows),
+        "imported": imported,
+        "duplicates": duplicates,
+        "errors": errors,
+        "results": results
+    }

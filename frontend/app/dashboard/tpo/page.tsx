@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import AppLayout from "@/components/AppLayout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -10,7 +11,6 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { 
   Briefcase, 
@@ -40,89 +40,37 @@ import {
   Filter,
   Search,
   MoreHorizontal,
-  ExternalLink
+  ExternalLink,
+  Loader2
 } from "lucide-react"
+import { api } from "@/lib/api"
+import { useAuthStore } from "@/store/auth"
 
-// Mock TPO data
-const tpoData = {
-  name: "Mr. Rajesh Kumar",
-  email: "rajesh.kumar@university.edu",
-  department: "Training & Placement Office",
-  phone: "+91 98765 43210",
-  office: "TPO Office, Admin Building"
+interface Job {
+  id: number
+  company: string
+  title: string
+  description: string
+  location: string | null
+  salary_range: string | null
+  job_type: string
+  deadline: string | null
+  is_active: boolean
+  created_at: string
+  requirements: string[]
+  application_count?: number
 }
 
-// Mock job postings data
-const jobPostings = [
-  {
-    id: 1,
-    company: "Microsoft",
-    position: "Software Development Engineer",
-    location: "Hyderabad, India",
-    salary: "₹18-25 LPA",
-    type: "Full-time",
-    deadline: "2024-02-15",
-    postedDate: "2024-01-20",
-    status: "active",
-    appliedStudents: 145,
-    eligibility: {
-      minCGPA: 7.0,
-      allowedBranches: ["Computer Engineering", "IT", "Electronics"],
-      maxBacklogs: 0
-    },
-    roadmapStatus: {
-      aptitude: { status: "completed", date: "2024-01-25", shortlisted: 45 },
-      technical: { status: "in_progress", date: "2024-02-01", shortlisted: 12 },
-      hr: { status: "pending", date: null, shortlisted: 0 }
-    }
-  },
-  {
-    id: 2,
-    company: "Google",
-    position: "Software Engineer Intern",
-    location: "Bangalore, India",
-    salary: "₹80,000/month",
-    type: "Internship",
-    deadline: "2024-02-20",
-    postedDate: "2024-01-22",
-    status: "active",
-    appliedStudents: 89,
-    eligibility: {
-      minCGPA: 8.5,
-      allowedBranches: ["Computer Engineering", "IT"],
-      maxBacklogs: 0
-    },
-    roadmapStatus: {
-      aptitude: { status: "pending", date: null, shortlisted: 0 },
-      technical: { status: "pending", date: null, shortlisted: 0 },
-      hr: { status: "pending", date: null, shortlisted: 0 }
-    }
-  },
-  {
-    id: 3,
-    company: "Amazon",
-    position: "SDE-1",
-    location: "Chennai, India",
-    salary: "₹15-20 LPA",
-    type: "Full-time",
-    deadline: "2024-02-18",
-    postedDate: "2024-01-18",
-    status: "completed",
-    appliedStudents: 234,
-    eligibility: {
-      minCGPA: 7.5,
-      allowedBranches: ["Computer Engineering", "IT", "Electronics", "Mechanical"],
-      maxBacklogs: 1
-    },
-    roadmapStatus: {
-      aptitude: { status: "completed", date: "2024-01-28", shortlisted: 78 },
-      technical: { status: "completed", date: "2024-02-05", shortlisted: 25 },
-      hr: { status: "completed", date: "2024-02-10", shortlisted: 8 }
-    }
-  }
-]
-
 function TpoHeader() {
+  const { user } = useAuthStore()
+  const tpoData = user || {
+    name: "TPO User",
+    email: "tpo@example.com",
+    department: "Training & Placement Office",
+    phone: "+91 98765 43210",
+    office: "TPO Office, Admin Building"
+  }
+
   return (
     <Card className="mb-6">
       <CardContent className="p-6">
@@ -132,24 +80,16 @@ function TpoHeader() {
           </div>
           <div className="flex-1">
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Welcome, {tpoData.name}
+              Welcome, {tpoData.name || tpoData.email}
             </h1>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600 dark:text-gray-400">
               <div className="flex items-center gap-2">
                 <Building2 className="w-4 h-4" />
-                <span>{tpoData.department}</span>
+                <span>{tpoData.department || "Training & Placement Office"}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Mail className="w-4 h-4" />
                 <span>{tpoData.email}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Phone className="w-4 h-4" />
-                <span>{tpoData.phone}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4" />
-                <span>{tpoData.office}</span>
               </div>
             </div>
           </div>
@@ -159,7 +99,7 @@ function TpoHeader() {
   )
 }
 
-function JobPostingForm() {
+function JobPostingForm({ onJobCreated }: { onJobCreated: () => void }) {
   const [formData, setFormData] = useState({
     company: "",
     position: "",
@@ -167,25 +107,43 @@ function JobPostingForm() {
     requirements: "",
     location: "",
     salary: "",
-    type: "",
+    type: "full-time",
     deadline: "",
     minCGPA: "",
     maxBacklogs: "",
-    allowedBranches: [],
+    allowedBranches: [] as string[],
     contactEmail: "",
     contactPhone: "",
     companyWebsite: ""
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
+    setError(null)
     
-    // Mock API call
-    setTimeout(() => {
-      setIsSubmitting(false)
-      alert("Job posting created successfully!")
+    try {
+      // Parse requirements
+      const requirements = formData.requirements
+        .split('\n')
+        .map(r => r.trim())
+        .filter(r => r.length > 0)
+
+      const jobData = {
+        company: formData.company,
+        title: formData.position,
+        description: formData.description,
+        requirements: requirements,
+        location: formData.location || null,
+        salary_range: formData.salary || null,
+        job_type: formData.type,
+        deadline: formData.deadline || null,
+      }
+
+      await api.jobs.create(jobData)
+      
       // Reset form
       setFormData({
         company: "",
@@ -194,7 +152,7 @@ function JobPostingForm() {
         requirements: "",
         location: "",
         salary: "",
-        type: "",
+        type: "full-time",
         deadline: "",
         minCGPA: "",
         maxBacklogs: "",
@@ -203,7 +161,15 @@ function JobPostingForm() {
         contactPhone: "",
         companyWebsite: ""
       })
-    }, 1500)
+      
+      // Refresh job list
+      onJobCreated()
+    } catch (err: any) {
+      console.error('Failed to create job:', err)
+      setError(err.response?.data?.detail || "Failed to create job posting")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleBranchChange = (branch: string, checked: boolean) => {
@@ -232,11 +198,16 @@ function JobPostingForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Company & Position Details */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="company">Company Name</Label>
+              <Label htmlFor="company">Company Name *</Label>
               <Input
                 id="company"
                 placeholder="Enter company name"
@@ -247,7 +218,7 @@ function JobPostingForm() {
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="position">Position Title</Label>
+              <Label htmlFor="position">Position Title *</Label>
               <Input
                 id="position"
                 placeholder="Enter position title"
@@ -259,7 +230,7 @@ function JobPostingForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Job Description</Label>
+            <Label htmlFor="description">Job Description *</Label>
             <Textarea
               id="description"
               placeholder="Describe the role and responsibilities"
@@ -271,10 +242,10 @@ function JobPostingForm() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="requirements">Requirements</Label>
+            <Label htmlFor="requirements">Requirements * (one per line)</Label>
             <Textarea
               id="requirements"
-              placeholder="List the job requirements (one per line)"
+              placeholder="Python&#10;React&#10;Node.js"
               value={formData.requirements}
               onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
               rows={3}
@@ -282,7 +253,6 @@ function JobPostingForm() {
             />
           </div>
 
-          {/* Job Details */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="location">Location</Label>
@@ -291,7 +261,6 @@ function JobPostingForm() {
                 placeholder="e.g., Mumbai, India"
                 value={formData.location}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                required
               />
             </div>
             
@@ -302,7 +271,6 @@ function JobPostingForm() {
                 placeholder="e.g., ₹15-20 LPA"
                 value={formData.salary}
                 onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
-                required
               />
             </div>
             
@@ -328,106 +296,19 @@ function JobPostingForm() {
               type="date"
               value={formData.deadline}
               onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-              required
             />
-          </div>
-
-          {/* Eligibility Criteria */}
-          <div className="space-y-4">
-            <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Eligibility Criteria</h4>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="minCGPA">Minimum CGPA</Label>
-                <Input
-                  id="minCGPA"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="10"
-                  placeholder="e.g., 7.0"
-                  value={formData.minCGPA}
-                  onChange={(e) => setFormData({ ...formData, minCGPA: e.target.value })}
-                  required
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="maxBacklogs">Maximum Backlogs</Label>
-                <Input
-                  id="maxBacklogs"
-                  type="number"
-                  min="0"
-                  placeholder="e.g., 0"
-                  value={formData.maxBacklogs}
-                  onChange={(e) => setFormData({ ...formData, maxBacklogs: e.target.value })}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Allowed Branches</Label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {["Computer Engineering", "Information Technology", "Electronics Engineering", "Mechanical Engineering"].map((branch) => (
-                  <label key={branch} className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={formData.allowedBranches.includes(branch)}
-                      onChange={(e) => handleBranchChange(branch, e.target.checked)}
-                      className="rounded border-gray-300"
-                    />
-                    <span className="text-sm">{branch}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Contact Information */}
-          <div className="space-y-4">
-            <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Contact Information</h4>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="contactEmail">Contact Email</Label>
-                <Input
-                  id="contactEmail"
-                  type="email"
-                  placeholder="hr@company.com"
-                  value={formData.contactEmail}
-                  onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
-                  required
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="contactPhone">Contact Phone</Label>
-                <Input
-                  id="contactPhone"
-                  type="tel"
-                  placeholder="+91 98765 43210"
-                  value={formData.contactPhone}
-                  onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="companyWebsite">Company Website</Label>
-                <Input
-                  id="companyWebsite"
-                  type="url"
-                  placeholder="https://company.com"
-                  value={formData.companyWebsite}
-                  onChange={(e) => setFormData({ ...formData, companyWebsite: e.target.value })}
-                />
-              </div>
-            </div>
           </div>
 
           <Button type="submit" disabled={isSubmitting} className="w-full gap-2">
             <Plus className="w-4 h-4" />
-            {isSubmitting ? "Creating Job Posting..." : "Create Job Posting"}
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Creating Job Posting...
+              </>
+            ) : (
+              "Create Job Posting"
+            )}
           </Button>
         </form>
       </CardContent>
@@ -438,28 +319,51 @@ function JobPostingForm() {
 function StudentDataUpload() {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
       setUploadedFile(file)
+      setError(null)
     }
   }
 
   const handleUpload = async () => {
     if (!uploadedFile) {
-      alert("Please select a file to upload")
+      setError("Please select a file to upload")
       return
     }
 
     setIsUploading(true)
+    setError(null)
     
-    // Mock API call
-    setTimeout(() => {
+    try {
+      // TODO: Create bulk upload endpoint
+      // For now, show error that endpoint doesn't exist yet
+      setError("Bulk upload endpoint not yet implemented. Please use individual student registration.")
+      // When implemented:
+      // const formData = new FormData()
+      // formData.append('file', uploadedFile)
+      // await api.profiles.bulkUpload(formData)
+    } catch (err: any) {
+      console.error('Upload failed:', err)
+      setError(err.response?.data?.detail || "Failed to upload student data")
+    } finally {
       setIsUploading(false)
-      alert("Student data uploaded successfully!")
-      setUploadedFile(null)
-    }, 2000)
+    }
+  }
+
+  const handleDownloadTemplate = () => {
+    // Generate CSV template
+    const headers = "sapid,name,branch,email,cgpa,backlogs,year,phone,city,skills,internships,linkedin,github,portfolio,resume,placement_status,graduation_year\n"
+    const blob = new Blob([headers], { type: 'text/csv' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'student_data_template.csv'
+    a.click()
+    window.URL.revokeObjectURL(url)
   }
 
   return (
@@ -470,35 +374,42 @@ function StudentDataUpload() {
           Student Data Upload
         </CardTitle>
         <CardDescription>
-          Upload student database in Excel format
+          Upload student database in Excel/CSV format
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Please ensure the Excel file contains columns: Name, SAP ID, Email, Branch, CGPA, Backlogs, Year, Phone
+            Please ensure the file contains columns: Name, SAP ID, Email, Branch, CGPA, Backlogs, Year, Phone
           </AlertDescription>
         </Alert>
+
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
         <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center">
           <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <div className="space-y-2">
             <p className="text-lg font-medium text-gray-900 dark:text-white">
-              Drop your Excel file here
+              Drop your CSV/Excel file here
             </p>
             <p className="text-gray-600 dark:text-gray-400">
               or click to browse files
             </p>
             <input
               type="file"
-              accept=".xlsx,.xls"
+              accept=".xlsx,.xls,.csv"
               onChange={handleFileUpload}
               className="hidden"
               id="file-upload"
             />
             <label htmlFor="file-upload">
-              <Button variant="outline" className="cursor-pointer" asChild>
+              <Button variant="outline" className="cursor-pointer mt-4" asChild>
                 <span>Choose File</span>
               </Button>
             </label>
@@ -532,54 +443,62 @@ function StudentDataUpload() {
 
         <div className="flex gap-4">
           <Button onClick={handleUpload} disabled={!uploadedFile || isUploading} className="flex-1 gap-2">
-            <Upload className="w-4 h-4" />
-            {isUploading ? "Uploading..." : "Upload Student Data"}
+            {isUploading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Uploading...
+              </>
+            ) : (
+              <>
+                <Upload className="w-4 h-4" />
+                Upload Student Data
+              </>
+            )}
           </Button>
           
-          <Button variant="outline" className="gap-2">
+          <Button variant="outline" className="gap-2" onClick={handleDownloadTemplate}>
             <Download className="w-4 h-4" />
             Download Template
           </Button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t">
-          <div className="text-center">
-            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">1,247</p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Total Students</p>
-          </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold text-green-600 dark:text-green-400">892</p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Eligible Students</p>
-          </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">Last Updated</p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">2 days ago</p>
-          </div>
         </div>
       </CardContent>
     </Card>
   )
 }
 
-function JobManagementDashboard() {
+function JobManagementDashboard({ jobs, onRefresh }: { jobs: Job[], onRefresh: () => void }) {
+  const router = useRouter()
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
 
-  const filteredJobs = jobPostings.filter((job) => {
+  const filteredJobs = jobs.filter((job) => {
     const matchesSearch = job.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         job.position.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = statusFilter === "all" || job.status === statusFilter
+                         job.title.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesStatus = statusFilter === "all" || 
+      (statusFilter === "active" && job.is_active) ||
+      (statusFilter === "completed" && !job.is_active)
     return matchesSearch && matchesStatus
   })
 
-  const updateRoadmapStatus = (jobId: number, stage: string, status: string) => {
-    // Mock function to update roadmap status
-    alert(`Updated ${stage} status to ${status} for job ${jobId}`)
+  const handleViewJob = (jobId: number) => {
+    router.push(`/dashboard/tpo/jobs/${jobId}`)
   }
 
-  const uploadShortlist = (jobId: number, stage: string) => {
-    // Mock function to upload shortlist
-    alert(`Upload shortlist for ${stage} stage of job ${jobId}`)
+  const handleEditJob = (jobId: number) => {
+    router.push(`/dashboard/tpo/jobs/${jobId}/edit`)
+  }
+
+  const handleDeleteJob = async (jobId: number) => {
+    if (!confirm("Are you sure you want to delete this job posting? This action cannot be undone.")) {
+      return
+    }
+
+    try {
+      await api.jobs.delete(jobId)
+      onRefresh()
+    } catch (err: any) {
+      alert(err.response?.data?.detail || "Failed to delete job")
+    }
   }
 
   return (
@@ -614,139 +533,98 @@ function JobManagementDashboard() {
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="draft">Draft</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-4">
-            {filteredJobs.map((job) => (
-              <Card key={job.id} className="border-l-4 border-l-blue-500">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                        {job.position}
-                      </h3>
-                      <p className="text-lg text-gray-600 dark:text-gray-400 font-medium">
-                        {job.company}
-                      </p>
-                      <div className="flex items-center gap-4 mt-2 text-sm text-gray-500 dark:text-gray-400">
-                        <span className="flex items-center gap-1">
-                          <MapPin className="w-4 h-4" />
-                          {job.location}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <DollarSign className="w-4 h-4" />
-                          {job.salary}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
-                          Deadline: {new Date(job.deadline).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={job.status === 'active' ? 'default' : job.status === 'completed' ? 'secondary' : 'outline'}>
-                        {job.status}
-                      </Badge>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                    <div className="text-center p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
-                      <Users className="w-5 h-5 text-blue-600 dark:text-blue-400 mx-auto mb-1" />
-                      <p className="text-xs text-gray-600 dark:text-gray-400">Applied</p>
-                      <p className="font-medium text-sm">{job.appliedStudents}</p>
-                    </div>
-                    <div className="text-center p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
-                      <Target className="w-5 h-5 text-green-600 dark:text-green-400 mx-auto mb-1" />
-                      <p className="text-xs text-gray-600 dark:text-gray-400">Aptitude</p>
-                      <p className="font-medium text-sm">{job.roadmapStatus.aptitude.shortlisted}</p>
-                    </div>
-                    <div className="text-center p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
-                      <Award className="w-5 h-5 text-purple-600 dark:text-purple-400 mx-auto mb-1" />
-                      <p className="text-xs text-gray-600 dark:text-gray-400">Technical</p>
-                      <p className="font-medium text-sm">{job.roadmapStatus.technical.shortlisted}</p>
-                    </div>
-                    <div className="text-center p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
-                      <CheckCircle className="w-5 h-5 text-orange-600 dark:text-orange-400 mx-auto mb-1" />
-                      <p className="text-xs text-gray-600 dark:text-gray-400">Final</p>
-                      <p className="font-medium text-sm">{job.roadmapStatus.hr.shortlisted}</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <h4 className="font-semibold text-gray-900 dark:text-white">Recruitment Stages</h4>
-                    
-                    {Object.entries(job.roadmapStatus).map(([stage, data]) => (
-                      <div key={stage} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className={`w-3 h-3 rounded-full ${
-                            data.status === 'completed' ? 'bg-green-500' :
-                            data.status === 'in_progress' ? 'bg-blue-500' : 'bg-gray-300'
-                          }`} />
-                          <div>
-                            <p className="font-medium capitalize">{stage.replace('_', ' ')}</p>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 capitalize">
-                              {data.status.replace('_', ' ')}
-                              {data.date && ` - ${new Date(data.date).toLocaleDateString()}`}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <Select
-                            value={data.status}
-                            onValueChange={(value) => updateRoadmapStatus(job.id, stage, value)}
-                          >
-                            <SelectTrigger className="w-32">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="in_progress">In Progress</SelectItem>
-                              <SelectItem value="completed">Completed</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          
-                          {data.status === 'completed' && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => uploadShortlist(job.id, stage)}
-                              className="gap-2"
-                            >
-                              <Upload className="w-4 h-4" />
-                              Upload List
-                            </Button>
+            {filteredJobs.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                No jobs found. {searchTerm || statusFilter !== "all" ? "Try adjusting your filters." : "Create your first job posting."}
+              </div>
+            ) : (
+              filteredJobs.map((job) => (
+                <Card key={job.id} className="border-l-4 border-l-blue-500">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                          {job.title}
+                        </h3>
+                        <p className="text-lg text-gray-600 dark:text-gray-400 font-medium">
+                          {job.company}
+                        </p>
+                        <div className="flex items-center gap-4 mt-2 text-sm text-gray-500 dark:text-gray-400">
+                          {job.location && (
+                            <span className="flex items-center gap-1">
+                              <MapPin className="w-4 h-4" />
+                              {job.location}
+                            </span>
+                          )}
+                          {job.salary_range && (
+                            <span className="flex items-center gap-1">
+                              <DollarSign className="w-4 h-4" />
+                              {job.salary_range}
+                            </span>
+                          )}
+                          {job.deadline && (
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-4 h-4" />
+                              Deadline: {new Date(job.deadline).toLocaleDateString()}
+                            </span>
                           )}
                         </div>
                       </div>
-                    ))}
-                  </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={job.is_active ? 'default' : 'secondary'}>
+                          {job.is_active ? 'Active' : 'Closed'}
+                        </Badge>
+                      </div>
+                    </div>
 
-                  <div className="flex justify-between items-center mt-4 pt-4 border-t">
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" className="gap-2">
-                        <Eye className="w-4 h-4" />
-                        View Details
-                      </Button>
-                      <Button variant="outline" size="sm" className="gap-2">
-                        <Edit className="w-4 h-4" />
-                        Edit
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                      <div className="text-center p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
+                        <Users className="w-5 h-5 text-blue-600 dark:text-blue-400 mx-auto mb-1" />
+                        <p className="text-xs text-gray-600 dark:text-gray-400">Applied</p>
+                        <p className="font-medium text-sm">{job.application_count || 0}</p>
+                      </div>
+                      <div className="text-center p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
+                        <Target className="w-5 h-5 text-green-600 dark:text-green-400 mx-auto mb-1" />
+                        <p className="text-xs text-gray-600 dark:text-gray-400">Job Type</p>
+                        <p className="font-medium text-sm capitalize">{job.job_type}</p>
+                      </div>
+                      <div className="text-center p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
+                        <Award className="w-5 h-5 text-purple-600 dark:text-purple-400 mx-auto mb-1" />
+                        <p className="text-xs text-gray-600 dark:text-gray-400">Requirements</p>
+                        <p className="font-medium text-sm">{job.requirements?.length || 0}</p>
+                      </div>
+                      <div className="text-center p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
+                        <CheckCircle className="w-5 h-5 text-orange-600 dark:text-orange-400 mx-auto mb-1" />
+                        <p className="text-xs text-gray-600 dark:text-gray-400">Status</p>
+                        <p className="font-medium text-sm capitalize">{job.is_active ? 'Active' : 'Closed'}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center mt-4 pt-4 border-t">
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" className="gap-2" onClick={() => handleViewJob(job.id)}>
+                          <Eye className="w-4 h-4" />
+                          View Details
+                        </Button>
+                        <Button variant="outline" size="sm" className="gap-2" onClick={() => handleEditJob(job.id)}>
+                          <Edit className="w-4 h-4" />
+                          Edit
+                        </Button>
+                      </div>
+                      <Button variant="destructive" size="sm" className="gap-2" onClick={() => handleDeleteJob(job.id)}>
+                        <Trash2 className="w-4 h-4" />
+                        Delete
                       </Button>
                     </div>
-                    <Button variant="destructive" size="sm" className="gap-2">
-                      <Trash2 className="w-4 h-4" />
-                      Delete
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
         </CardContent>
       </Card>
@@ -755,27 +633,88 @@ function JobManagementDashboard() {
 }
 
 export default function TpoDashboard() {
-  // Mock user data for TPO role
-  const mockUser = {
+  const router = useRouter()
+  const { user } = useAuthStore()
+  const [jobs, setJobs] = useState<Job[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const loadJobs = async () => {
+    try {
+      setIsLoading(true)
+      setError(null)
+      const response = await api.jobs.list(true) // Include inactive for TPO
+      const jobsData = response.data.map((job: any) => ({
+        id: job.id,
+        company: job.company,
+        title: job.title,
+        description: job.description,
+        location: job.location,
+        job_type: job.job_type || "full-time",
+        salary_range: job.salary_range,
+        deadline: job.deadline,
+        is_active: job.is_active,
+        created_at: job.created_at,
+        requirements: job.requirements || [],
+        application_count: job.application_count || 0,
+      }))
+      setJobs(jobsData)
+    } catch (err: any) {
+      console.error('Failed to load jobs:', err)
+      setError(err.response?.data?.detail || "Failed to load jobs")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadJobs()
+  }, [])
+
+  const displayUser = user ? {
+    id: user.id?.toString() || "3",
+    name: user.profile_data?.first_name && user.profile_data?.last_name
+      ? `${user.profile_data.first_name} ${user.profile_data.last_name}`
+      : user.email?.split('@')[0] || "TPO",
+    email: user.email || "",
+    role: "tpo" as const,
+    department: user.profile_data?.department || "Training & Placement Office"
+  } : {
     id: "3",
-    name: "Mr. Rajesh Kumar",
-    email: "tpo@example.com",
+    name: "TPO",
+    email: "",
     role: "tpo" as const,
     department: "Training & Placement Office"
   }
 
+  // Calculate stats from real data
+  const totalJobs = jobs.length
+  const activeJobs = jobs.filter(j => j.is_active).length
+  const totalApplications = jobs.reduce((sum, job) => sum + (job.application_count || 0), 0)
+
   return (
-    <AppLayout user={mockUser}>
+    <AppLayout user={displayUser}>
       <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
         <div className="p-6 max-w-7xl mx-auto space-y-6">
           <TpoHeader />
+
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <Card>
               <CardContent className="p-4 text-center">
                 <Briefcase className="w-8 h-8 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{jobPostings.length}</p>
+                {isLoading ? (
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+                ) : (
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalJobs}</p>
+                )}
                 <p className="text-sm text-gray-600 dark:text-gray-400">Total Jobs</p>
               </CardContent>
             </Card>
@@ -783,9 +722,11 @@ export default function TpoDashboard() {
             <Card>
               <CardContent className="p-4 text-center">
                 <Users className="w-8 h-8 text-green-600 dark:text-green-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {jobPostings.reduce((sum, job) => sum + job.appliedStudents, 0)}
-                </p>
+                {isLoading ? (
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+                ) : (
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalApplications}</p>
+                )}
                 <p className="text-sm text-gray-600 dark:text-gray-400">Applications</p>
               </CardContent>
             </Card>
@@ -793,9 +734,11 @@ export default function TpoDashboard() {
             <Card>
               <CardContent className="p-4 text-center">
                 <CheckCircle className="w-8 h-8 text-purple-600 dark:text-purple-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {jobPostings.filter(job => job.status === 'active').length}
-                </p>
+                {isLoading ? (
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+                ) : (
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{activeJobs}</p>
+                )}
                 <p className="text-sm text-gray-600 dark:text-gray-400">Active Jobs</p>
               </CardContent>
             </Card>
@@ -803,18 +746,26 @@ export default function TpoDashboard() {
             <Card>
               <CardContent className="p-4 text-center">
                 <Award className="w-8 h-8 text-orange-600 dark:text-orange-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {jobPostings.reduce((sum, job) => sum + job.roadmapStatus.hr.shortlisted, 0)}
-                </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Final Selections</p>
+                {isLoading ? (
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+                ) : (
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalJobs - activeJobs}</p>
+                )}
+                <p className="text-sm text-gray-600 dark:text-gray-400">Closed Jobs</p>
               </CardContent>
             </Card>
             
             <Card>
               <CardContent className="p-4 text-center">
                 <TrendingUp className="w-8 h-8 text-red-600 dark:text-red-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">85%</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Placement Rate</p>
+                {isLoading ? (
+                  <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+                ) : (
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {totalJobs > 0 ? Math.round((activeJobs / totalJobs) * 100) : 0}%
+                  </p>
+                )}
+                <p className="text-sm text-gray-600 dark:text-gray-400">Active Rate</p>
               </CardContent>
             </Card>
           </div>
@@ -837,11 +788,18 @@ export default function TpoDashboard() {
             </TabsList>
 
             <TabsContent value="job-management">
-              <JobManagementDashboard />
+              {isLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+                  <span className="ml-3 text-gray-600 dark:text-gray-400">Loading jobs...</span>
+                </div>
+              ) : (
+                <JobManagementDashboard jobs={jobs} onRefresh={loadJobs} />
+              )}
             </TabsContent>
 
             <TabsContent value="post-job">
-              <JobPostingForm />
+              <JobPostingForm onJobCreated={loadJobs} />
             </TabsContent>
 
             <TabsContent value="student-data">
